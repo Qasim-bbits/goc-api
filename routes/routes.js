@@ -86,6 +86,7 @@ Routes.route('/buyParking').post(parking_ctrl.buyParking);
 Routes.route('/getParkings').get(parking_ctrl.getParkings);
 Routes.route('/emailReciept').post(parking_ctrl.emailReciept);
 Routes.route('/getUserHistory').post(parking_ctrl.getUserHistory);
+Routes.route('/mobileParking').post(parking_ctrl.mobileParking);
 
 //routes for parking
 Routes.route('/getUsers').get(user_ctrl.getUsers);

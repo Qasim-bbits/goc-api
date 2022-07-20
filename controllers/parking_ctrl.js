@@ -59,6 +59,7 @@ module.exports.emailReciept = async function(req,res){
     populate('user').
     populate('rate').
     populate('zone');
+    console.log(parkings)
     if(parkings.length > 0){
       let emailBody = {
         startDate : moment(parkings[0].from).format('ll'),
@@ -103,3 +104,54 @@ module.exports.getUserHistory = async function(req,res){
       res.status(500).json({ success: false, msg: err.message });
   }
 }
+
+module.exports.mobileParking = async function(req,res){
+  if(req.body.amount == 0){
+    req.body.from = moment(req.body.from, 'MMMM Do YYYY, hh:mm a' ).format()
+    req.body.to = moment(req.body.to, 'MMMM Do YYYY, hh:mm a' ).format()
+    req.body.parking_id = Math.floor(100000 + Math.random() * 900000)
+    console.log(req.body)
+    const parkings = new Parkings(req.body);
+    parkings.save();
+    res.send(parkings);
+  }else {
+    let expiryMonth = req.body.expDate.slice(0, 2)
+    let expiryYear = req.body.expDate.slice(3)
+
+    try {
+      const paymentMethod = await stripe.paymentMethods.create({
+        type: 'card',
+        card: {
+          number: req.body.cardNum,
+          exp_month: expiryMonth,
+          exp_year: expiryYear,
+          cvc: req.body.cvv,
+        },
+      });
+      console.log(paymentMethod)
+      try {
+        const payment = await stripe.paymentIntents.create({
+          amount: parseFloat(req.body.amount) * 100,
+          currency: "CAD",
+          description: "Your Company Description",
+          payment_method: paymentMethod.id,
+          confirm: true,
+        });
+        req.body.paymentMethod = payment.payment_method;
+        req.body.from = moment(req.body.from, 'MMMM Do YYYY, hh:mm a' ).format()
+        req.body.to = moment(req.body.to, 'MMMM Do YYYY, hh:mm a' ).format()
+        req.body.parking_id = Math.floor(100000 + Math.random() * 900000)
+        console.log(req.body)
+        const parkings = new Parkings(req.body);
+        parkings.save();
+        res.send(parkings);
+      } catch (error) {
+        res.json({
+          message: error,
+          success: false,
+        });
+      }
+    } catch (e) {
+      console.log(e)
+    }
+  }}
