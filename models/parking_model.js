@@ -8,6 +8,11 @@ const Parkings = mongoose.model(
             required : false,
             minlength : 0
         },
+        service_fee : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
         parking_id : {
             type : Number,
             required : false,
