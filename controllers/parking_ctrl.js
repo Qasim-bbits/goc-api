@@ -116,16 +116,13 @@ module.exports.mobileParking = async function(req,res){
     parkings.save();
     res.send(parkings);
   }else {
-    let expiryMonth = req.body.expDate.slice(0, 2)
-    let expiryYear = req.body.expDate.slice(3)
-
     try {
       const paymentMethod = await stripe.paymentMethods.create({
         type: 'card',
         card: {
           number: req.body.cardNum,
-          exp_month: expiryMonth,
-          exp_year: expiryYear,
+          exp_month: req.body.expMonth,
+          exp_year: req.body.expYear,
           cvc: req.body.cvv,
         },
       });
