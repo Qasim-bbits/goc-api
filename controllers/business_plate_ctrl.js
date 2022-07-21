@@ -2,6 +2,7 @@ const { BusinessPlates } = require('../models/business_plate_model');
 
 
 module.exports.addBusinessPlate = function(req,res){
+    req.body.plate = req.body.plate.toUpperCase();
     const plate = new BusinessPlates(req.body);
     plate.save();
     res.send(plate);
@@ -13,6 +14,7 @@ module.exports.delPlate = async function (req, res){
 }
 
 module.exports.editPlate = async function (req, res){
+    req.body.plate = req.body.plate.toUpperCase();
     BusinessPlates.findByIdAndUpdate(req.body.id, req.body, {new: true})
     .then(response => {
         if(!response) {

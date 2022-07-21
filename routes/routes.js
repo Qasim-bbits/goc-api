@@ -44,6 +44,7 @@ Routes.route('/getZones').get(city_ctrl.getZones);
 Routes.route('/getZonesById').post(city_ctrl.getZonesById);
 Routes.route('/getZonebyId').post(city_ctrl.getZonebyId);
 Routes.route('/editZone').post(city_ctrl.editZone);
+Routes.route('/delZone').post(city_ctrl.delZone);
 
 
 //routes for rate
@@ -59,6 +60,9 @@ Routes.route('/getQRRateById').post(rate_ctrl.getQRRateById);
 Routes.route('/editRate').post(rate_ctrl.editRate);
 Routes.route('/delRate').post(rate_ctrl.delRate);
 Routes.route('/editRateType').post(rate_ctrl.editRateType);
+Routes.route('/editRateStep').post(rate_ctrl.editRateStep);
+Routes.route('/delRateType').post(rate_ctrl.delRateType);
+Routes.route('/delRateStep').post(rate_ctrl.delRateStep);
 
 //routes for plate
 Routes.route('/getPlatesByUser').post(plate_ctrl.getPlatesByUser);
@@ -88,8 +92,8 @@ Routes.route('/emailReciept').post(parking_ctrl.emailReciept);
 Routes.route('/getUserHistory').post(parking_ctrl.getUserHistory);
 Routes.route('/mobileParking').post(parking_ctrl.mobileParking);
 
-//routes for parking
+//routes for users
 Routes.route('/getUsers').get(user_ctrl.getUsers);
-
+Routes.route('/delItem').post(user_ctrl.delItem);
 
 module.exports = Routes;

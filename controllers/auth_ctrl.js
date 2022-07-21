@@ -58,7 +58,7 @@ module.exports.verify = function(req,res){
             res.send({auth : true, result : response, token: access_token});
         })
     }else{
-        res.send({msg: "Token has been Expired. Please register again"});
+        res.send({auth : false, msg: "Token has been Expired. Please register again"});
     }
 }
 

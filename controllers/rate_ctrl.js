@@ -5,7 +5,7 @@ const { BusinessPlates } = require('../models/business_plate_model');
 const { Parkings } = require('../models/parking_model');
 
 const moment = require('moment-timezone');
-moment.tz.setDefault("America/New_York");
+// moment.tz.setDefault("America/New_York");
 
 var current_time = moment().format();
 let now = moment(current_time).format("L");
@@ -34,7 +34,7 @@ module.exports.getRateById = async function (req, res){
     }else{
         res.send({
             success: false,
-            msg: 'Parking is already purchased, Please purchase again after'+
+            msg: 'Parking is already purchased, Please purchase again after '+
             moment(parkings[0].to).format("MMMM Do YYYY, hh:mm a")
         });
     }
@@ -42,26 +42,92 @@ module.exports.getRateById = async function (req, res){
 
 module.exports.getQRRateById = async function (req, res){
     if(req.body.zone_type == 2){
-        const parkings = await Parkings.find({ 
-            $where: function() { 
-                today = new Date(); //
-                today.setHours(0,0,0,0);
-                return (this._id.getTimestamp() >= today)
-            },
-            plate: req.body.plate
-        })
+        let startDate = moment().toDate();
+        startDate.setHours(6);
+        let endDate = moment().toDate();
+        endDate.setHours(18);
+        console.log(startDate,endDate,moment().toDate())
+        if(moment().toDate() <= endDate && moment().toDate() >= startDate){
+            const parkings = await Parkings.find({
+                $and: [
+                    {
+                        from: {$gte: startDate}
+                    },
+                    {
+                        to: {$lte: endDate}
+                    },
+                    {
+                        plate: req.body.plate
+                    }
+                ]
+            })
+            if(parkings.length == 0){
+                const rates = await Rates.find({zone_id : req.body.id, qr_code: true}).select('-__v');
+                res.send(rates);
+            }else{
+                res.send({
+                    success: false,
+                    msg: 'Free parking purchased today, Parking not allowed except for Scotia Bank Customers'
+                });
+            }
+        }else{
+            const parkings = await Parkings.find({
+                $and: [
+                  {
+                    from: {
+                      $lte: new Date()
+                    }
+                  },
+                  {
+                    to: {
+                      $gte: new Date()
+                    }
+                  },
+                  {
+                    plate: req.body.plate
+                  }
+                ]
+              })
+            if(parkings.length == 0){
+                const rates = await Rates.find({zone_id : req.body.id, qr_code: false}).select('-__v');
+                res.send(rates);
+            }else{
+                res.send({
+                    success: false,
+                    msg: 'Parking is already purchased, Please purchase again after '+
+                    moment(parkings[0].to).format("MMMM Do YYYY, hh:mm a")
+                });
+            }
+        }
+    }else{
+        const parkings = await Parkings.find({
+            $and: [
+              {
+                from: {
+                  $lte: new Date()
+                }
+              },
+              {
+                to: {
+                  $gte: new Date()
+                }
+              },
+              {
+                plate: req.body.plate
+              }
+            ]
+          })
+          console.log(parkings);
         if(parkings.length == 0){
-            const rates = await Rates.find({zone_id : req.body.id, qr_code: true}).select('-__v');
+            const rates = await Rates.find({zone_id : req.body.id, qr_code: false}).select('-__v');
             res.send(rates);
         }else{
             res.send({
                 success: false,
-                msg: 'Free parking purchased today, Sign In or download our app'
+                msg: 'Parking is already purchased, Please purchase again after '+
+                moment(parkings[0].to).format("MMMM Do YYYY, hh:mm a")
             });
         }
-    }else{
-        const rates = await Rates.find({zone_id : req.body.id}).select('-__v');
-        res.send(rates);
     }
 }
 
@@ -102,6 +168,16 @@ module.exports.delRate = async function (req, res){
     res.send(rate);
 }
 
+module.exports.delRateType = async function (req, res){
+    const rateType = await RateTypes.deleteOne({_id : req.body.id}).select('-__v');
+    res.send(rateType);
+}
+
+module.exports.delRateStep = async function (req, res){
+    const rateStep = await RateSteps.deleteOne({_id : req.body.id}).select('-__v');
+    res.send(rateStep);
+}
+
 module.exports.addRateType = function(req,res){
     const rateType = new RateTypes(req.body);
     rateType.save();
@@ -134,6 +210,27 @@ module.exports.editRateType = async function (req, res){
     });
 }
 
+module.exports.editRateStep = async function (req, res){
+    RateSteps.findByIdAndUpdate(req.body.id, req.body, {new: true})
+    .then(response => {
+        if(!response) {
+            return res.status(404).json({
+                msg: "Data not found with id " + req.body.id
+            });
+        }
+        res.json(response);
+    }).catch(err => {
+        if(err.kind === 'ObjectId') {
+            return res.status(404).json({
+                msg: "Data not found with id " + req.body.id
+            });                
+        }
+        return res.status(500).json({
+            msg: "Error updating Data with id " + req.body._id
+        });
+    });
+}
+
 module.exports.addRateStep = function(req,res){
     const rateStep = new RateSteps(req.body);
     rateStep.save();
@@ -142,61 +239,19 @@ module.exports.addRateStep = function(req,res){
 
 module.exports.getRateSteps = async function(req,res){
     const rates = await RateTypes.find({rate_id : req.body.id}).select('-__v');
-    if(req.body.rate_type == 1){
-        const businessPlates = await BusinessPlates.find({plate : req.body.plate}).select('-__v');
-        if(businessPlates.length > 0){
-            let rateSteps = [];
-            let added_date = moment().add(1440, 'minutes').format('MMMM Do YYYY, hh:mm a');
-            let obj={
-                time: 1440,
-                rate: 0,
-                time_desc: added_date,
-                time_diff: showDiff(added_date),
-                day: calculateDay(moment(added_date, 'MMMM Do YYYY, hh:mm a' ).format()),
-                service_fee: 0,
-                total: 0,
-                current_time: moment().format('MMMM Do YYYY, hh:mm a')
-            }
-            rateSteps.push(obj);
-            current_time = moment().format();
-            now = moment(current_time).format("L");
-            res.send(rateSteps);
-        }else{
-            res.send({success : false, msg:"You are not allowed to park here"})
-        }
-    }else if(req.body.qr_code == 1){
-        let rateSteps = [];
-            let added_date = moment().add(45, 'minutes').format('MMMM Do YYYY, hh:mm a');
-            let obj={
-                time: 45,
-                rate: 0,
-                time_desc: added_date,
-                time_diff: showDiff(added_date),
-                day: calculateDay(moment(added_date, 'MMMM Do YYYY, hh:mm a' ).format()),
-                service_fee: 0,
-                total: 0,
-                current_time: moment().format('MMMM Do YYYY, hh:mm a')
-            }
-            rateSteps.push(obj);
-            current_time = moment().format();
-            now = moment(current_time).format("L");
-            res.send(rateSteps);
+    let rateSteps = await generateStep(rates);
+    let nextStep =  await generateStep(rates);
+    let mergeSteps = await [...rateSteps, ...nextStep];
+    if(rateSteps.length > 0 && nextStep.length > 0){
+        nextStep[0].total = rateSteps[rateSteps.length-1].total + nextStep[0].rate;
+        nextStep[0].rate = rateSteps[rateSteps.length-1].rate + nextStep[0].rate;
+    }
+    current_time = moment().format();
+    now = moment(current_time).format("L");
+    if(mergeSteps.length > 0){
+        res.send(mergeSteps)
     }else{
-        let rateSteps = await generateStep(rates);
-        let nextStep =  await generateStep(rates);
-        let mergeSteps = await [...rateSteps, ...nextStep];
-        if(rateSteps.length > 0 && nextStep.length > 0){
-            nextStep[0].total = rateSteps[rateSteps.length-1].total + nextStep[0].rate;
-            nextStep[0].rate = rateSteps[rateSteps.length-1].rate + nextStep[0].rate;
-        }
-        // console.log(rateSteps,nextStep);
-        current_time = moment().format();
-        now = moment(current_time).format("L");
-        if(mergeSteps.length > 0){
-            res.send(mergeSteps)
-        }else{
-            res.send({success : false, msg:"Parking is not allowed during these hours"})
-        }
+        res.send({success : false, msg:"Parking not allowed except for Scotia Bank Customers"})
     }
 }
 
@@ -211,7 +266,7 @@ const generateStep = async(rates)=>{
         }
         const condition1 = moment(current_time) >= moment(start_time);
         const condition2 = moment(current_time) < moment(end_time);
-        console.log(condition1,condition2,current_time);
+        console.log(condition1,condition2,current_time,start_time);
         if(condition1 && condition2){
             // console.log('in if');
 

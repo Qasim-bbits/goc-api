@@ -3,6 +3,7 @@ const { Zones } = require('../models/zone_model');
 
 
 module.exports.addPlate = function(req,res){
+    req.body.plate = req.body.plate.toUpperCase();
     const plate = new Plates(req.body);
     plate.save();
     res.send(plate);
@@ -19,6 +20,7 @@ module.exports.delPlate = async function (req, res){
 }
 
 module.exports.editPlate = async function (req, res){
+    req.body.plate = req.body.plate.toUpperCase();
     Plates.findByIdAndUpdate(req.body.id, req.body, {new: true})
     .then(response => {
         if(!response) {

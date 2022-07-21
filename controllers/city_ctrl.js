@@ -62,3 +62,8 @@ module.exports.editZone = async function (req, res){
         });
     });
 }
+
+module.exports.delZone = async function (req, res){
+    const zone = await Zones.deleteOne({_id : req.body.id}).select('-__v');
+    res.send(zone);
+}

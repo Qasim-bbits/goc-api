@@ -3,7 +3,7 @@ const stripe = require("stripe")(process.env.SECRET_KEY);
 var email_helper = require('../helpers/email_helper');
 
 const moment = require('moment-timezone');
-moment.tz.setDefault("America/New_York");
+// moment.tz.setDefault("America/New_York");
 
 module.exports.buyParking = async function(req,res){
     if(req.body.amount == 0){
@@ -72,6 +72,7 @@ module.exports.emailReciept = async function(req,res){
         amount : parkings[0].amount,
         parking_id : parkings[0].parking_id,
         plate : parkings[0].plate,
+        service_fee : parkings[0].service_fee,
       }
       let emailRes = await email_helper.send_email('Parking Receipt','./views/receipt.ejs',parkings[0].user.email,emailBody);
       res.send({
