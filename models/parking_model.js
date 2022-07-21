@@ -8,6 +8,11 @@ const Parkings = mongoose.model(
             required : false,
             minlength : 0
         },
+        parking_id : {
+            type : Number,
+            required : false,
+            minlength : 0
+        },
         city : {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Cities',
@@ -26,6 +31,17 @@ const Parkings = mongoose.model(
             required : false,
             minlength : 0
         },
+        rate : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Rates',
+            required : false,
+            minlength : 0
+        },
+        coord : {
+            type : Object,
+            required : false,
+            minlength : 0
+        },
         paymentMethod : {
             type : String,
             required : false,
@@ -37,12 +53,12 @@ const Parkings = mongoose.model(
             minlength : 0
         },
         from : {
-            type : String,
+            type : Date,
             required : false,
             minlength : 0
         },
         to : {
-            type : String,
+            type : Date,
             required : false,
             minlength : 0
         }

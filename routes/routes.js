@@ -28,6 +28,9 @@ Routes.route('/').get(function (req, res){
 Routes.route('/signup').post(auth_ctrl.signup);
 Routes.route('/verify').post(auth_ctrl.verify);
 Routes.route('/login').post(auth_ctrl.login);
+Routes.route('/forgetPassword').post(auth_ctrl.forgetPassword);
+Routes.route('/changePassword').post(auth_ctrl.changePassword);
+
 Routes.route('/testGetUser').get(auth_ctrl.testGetUser);
 Routes.route('/testAddUser').get(auth_ctrl.testAddUser);
 // Routes.route('/resetPassword').post(auth_ctrl.resetPassword);
@@ -39,6 +42,8 @@ Routes.route('/addZone').post(city_ctrl.addZone);
 Routes.route('/getCities').get(city_ctrl.getCities);
 Routes.route('/getZones').get(city_ctrl.getZones);
 Routes.route('/getZonesById').post(city_ctrl.getZonesById);
+Routes.route('/getZonebyId').post(city_ctrl.getZonebyId);
+Routes.route('/editZone').post(city_ctrl.editZone);
 
 
 //routes for rate
@@ -50,6 +55,10 @@ Routes.route('/getRateTypes').get(rate_ctrl.getRateTypes);
 Routes.route('/addRateStep').post(rate_ctrl.addRateStep);
 Routes.route('/getRateSteps').post(rate_ctrl.getRateSteps);
 Routes.route('/getRateDetail').post(rate_ctrl.getRateDetail);
+Routes.route('/getQRRateById').post(rate_ctrl.getQRRateById);
+Routes.route('/editRate').post(rate_ctrl.editRate);
+Routes.route('/delRate').post(rate_ctrl.delRate);
+Routes.route('/editRateType').post(rate_ctrl.editRateType);
 
 //routes for plate
 Routes.route('/getPlatesByUser').post(plate_ctrl.getPlatesByUser);
@@ -74,6 +83,9 @@ Routes.route('/addOrganizations').post([authorization,upload.fields(organization
 
 //routes for parking
 Routes.route('/buyParking').post(parking_ctrl.buyParking);
+Routes.route('/getParkings').get(parking_ctrl.getParkings);
+Routes.route('/emailReciept').post(parking_ctrl.emailReciept);
+Routes.route('/getUserHistory').post(parking_ctrl.getUserHistory);
 
 //routes for parking
 Routes.route('/getUsers').get(user_ctrl.getUsers);

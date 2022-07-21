@@ -53,6 +53,11 @@ const Users = mongoose.model(
             required : false,
             minlength : 0
         },
+        forget_password : {
+            type : Boolean,
+            required : false,
+            minlength : 0
+        }
     },
     { timestamps: { created_at: 'created_at' } }
     )

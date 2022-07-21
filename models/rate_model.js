@@ -17,6 +17,11 @@ const Rates = mongoose.model(
             type : Number,
             required : false,
             minlength : 0
+        },
+        qr_code : {
+            type : Boolean,
+            required : false,
+            minlength : 0
         }
     })
 )

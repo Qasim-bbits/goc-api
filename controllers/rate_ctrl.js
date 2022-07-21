@@ -2,15 +2,67 @@ const { Rates } = require('../models/rate_model');
 const { RateTypes } = require('../models/rate_type_model');
 const { RateSteps } = require('../models/rate_steps_model');
 const { BusinessPlates } = require('../models/business_plate_model');
+const { Parkings } = require('../models/parking_model');
 
-const moment = require('moment');
+const moment = require('moment-timezone');
+moment.tz.setDefault("America/New_York");
 
 var current_time = moment().format();
 let now = moment(current_time).format("L");
 
 module.exports.getRateById = async function (req, res){
-    const rates = await Rates.find({zone_id : req.body.id}).select('-__v');
-    res.send(rates);
+    const parkings = await Parkings.find({
+        $and: [
+          {
+            from: {
+              $lte: new Date()
+            }
+          },
+          {
+            to: {
+              $gte: new Date()
+            }
+          },
+          {
+            plate: req.body.plate
+          }
+        ]
+      })
+    if(parkings.length == 0){
+        const rates = await Rates.find({zone_id : req.body.id, qr_code: false}).select('-__v');
+        res.send(rates);
+    }else{
+        res.send({
+            success: false,
+            msg: 'Parking is already purchased, Please purchase again after'+
+            moment(parkings[0].to).format("MMMM Do YYYY, hh:mm a")
+        });
+    }
+}
+
+module.exports.getQRRateById = async function (req, res){
+    if(req.body.zone_type == 2){
+        const parkings = await Parkings.find({ 
+            $where: function() { 
+                today = new Date(); //
+                today.setHours(0,0,0,0);
+                return (this._id.getTimestamp() >= today)
+            },
+            plate: req.body.plate
+        })
+        if(parkings.length == 0){
+            const rates = await Rates.find({zone_id : req.body.id, qr_code: true}).select('-__v');
+            res.send(rates);
+        }else{
+            res.send({
+                success: false,
+                msg: 'Free parking purchased today, Sign In or download our app'
+            });
+        }
+    }else{
+        const rates = await Rates.find({zone_id : req.body.id}).select('-__v');
+        res.send(rates);
+    }
 }
 
 module.exports.getRates = async function (req, res){
@@ -24,6 +76,32 @@ module.exports.addRate = function(req,res){
     res.send(rate);
 }
 
+module.exports.editRate = async function (req, res){
+    Rates.findByIdAndUpdate(req.body.id, req.body, {new: true})
+    .then(response => {
+        if(!response) {
+            return res.status(404).json({
+                msg: "Data not found with id " + req.body.id
+            });
+        }
+        res.json(response);
+    }).catch(err => {
+        if(err.kind === 'ObjectId') {
+            return res.status(404).json({
+                msg: "Data not found with id " + req.body.id
+            });                
+        }
+        return res.status(500).json({
+            msg: "Error updating Data with id " + req.body._id
+        });
+    });
+}
+
+module.exports.delRate = async function (req, res){
+    const rate = await Rates.deleteOne({_id : req.body.id}).select('-__v');
+    res.send(rate);
+}
+
 module.exports.addRateType = function(req,res){
     const rateType = new RateTypes(req.body);
     rateType.save();
@@ -33,6 +111,27 @@ module.exports.addRateType = function(req,res){
 module.exports.getRateTypes = async function (req, res){
     const rateType = await RateTypes.find().select('-__v');
     res.send(rateType);
+}
+
+module.exports.editRateType = async function (req, res){
+    RateTypes.findByIdAndUpdate(req.body.id, req.body, {new: true})
+    .then(response => {
+        if(!response) {
+            return res.status(404).json({
+                msg: "Data not found with id " + req.body.id
+            });
+        }
+        res.json(response);
+    }).catch(err => {
+        if(err.kind === 'ObjectId') {
+            return res.status(404).json({
+                msg: "Data not found with id " + req.body.id
+            });                
+        }
+        return res.status(500).json({
+            msg: "Error updating Data with id " + req.body._id
+        });
+    });
 }
 
 module.exports.addRateStep = function(req,res){
@@ -53,7 +152,10 @@ module.exports.getRateSteps = async function(req,res){
                 rate: 0,
                 time_desc: added_date,
                 time_diff: showDiff(added_date),
-                day: calculateDay(moment(added_date, 'MMMM Do YYYY, hh:mm a' ).format())
+                day: calculateDay(moment(added_date, 'MMMM Do YYYY, hh:mm a' ).format()),
+                service_fee: 0,
+                total: 0,
+                current_time: moment().format('MMMM Do YYYY, hh:mm a')
             }
             rateSteps.push(obj);
             current_time = moment().format();
@@ -62,18 +164,39 @@ module.exports.getRateSteps = async function(req,res){
         }else{
             res.send({success : false, msg:"You are not allowed to park here"})
         }
+    }else if(req.body.qr_code == 1){
+        let rateSteps = [];
+            let added_date = moment().add(45, 'minutes').format('MMMM Do YYYY, hh:mm a');
+            let obj={
+                time: 45,
+                rate: 0,
+                time_desc: added_date,
+                time_diff: showDiff(added_date),
+                day: calculateDay(moment(added_date, 'MMMM Do YYYY, hh:mm a' ).format()),
+                service_fee: 0,
+                total: 0,
+                current_time: moment().format('MMMM Do YYYY, hh:mm a')
+            }
+            rateSteps.push(obj);
+            current_time = moment().format();
+            now = moment(current_time).format("L");
+            res.send(rateSteps);
     }else{
         let rateSteps = await generateStep(rates);
         let nextStep =  await generateStep(rates);
         let mergeSteps = await [...rateSteps, ...nextStep];
         if(rateSteps.length > 0 && nextStep.length > 0){
+            nextStep[0].total = rateSteps[rateSteps.length-1].total + nextStep[0].rate;
             nextStep[0].rate = rateSteps[rateSteps.length-1].rate + nextStep[0].rate;
         }
-        console.log(rateSteps,nextStep);
+        // console.log(rateSteps,nextStep);
         current_time = moment().format();
         now = moment(current_time).format("L");
-
-        res.send(mergeSteps)
+        if(mergeSteps.length > 0){
+            res.send(mergeSteps)
+        }else{
+            res.send({success : false, msg:"Parking is not allowed during these hours"})
+        }
     }
 }
 
@@ -88,9 +211,9 @@ const generateStep = async(rates)=>{
         }
         const condition1 = moment(current_time) >= moment(start_time);
         const condition2 = moment(current_time) < moment(end_time);
-        // console.log(condition1,condition2,start_time,end_time);
+        console.log(condition1,condition2,current_time);
         if(condition1 && condition2){
-            console.log('in if');
+            // console.log('in if');
 
             // console.log(x._id);
             let time_reached = false;
@@ -106,7 +229,10 @@ const generateStep = async(rates)=>{
                     rate: y.rate,
                     time_desc: added_date,
                     time_diff: showDiff(added_date),
-                    day: calculateDay(moment(added_date, 'MMMM Do YYYY, hh:mm a' ).format())
+                    day: calculateDay(moment(added_date, 'MMMM Do YYYY, hh:mm a' ).format()),
+                    service_fee: x.service_fee,
+                    total: (y.rate + x.service_fee),
+                    current_time: moment().format('MMMM Do YYYY, hh:mm a')
                 }
                 if(!time_reached){
                     steps.push(obj);
@@ -118,11 +244,11 @@ const generateStep = async(rates)=>{
             current_time = moment(added_date, 'MMMM Do YYYY, hh:mm a' ).format();
             // return await rateSteps;
         }else{
-            console.log('in else');
+            // console.log('in else');
             steps = [];
         }
     }))
-    console.log(steps);
+    // console.log(steps);
     return steps;
 }
 

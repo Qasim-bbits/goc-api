@@ -26,6 +26,7 @@ module.exports.signup = function(req,res){
             req.body.password = cipherPassword;
             req.body.token = token;
             req.body.email_verified = 0;
+            req.body.forget_password = 0;
             let emailBody = { ... req.body };
             emailBody.path = req.get('origin') + '/';
             const signup = new Users(req.body);
@@ -53,7 +54,8 @@ module.exports.verify = function(req,res){
                     msg: "Token has been Expired. Please register again"
                 });
             }
-            res.send(response);
+            let access_token = encrypt_helper.jwt_encode({ id : response._id, role : response.role }, '1d')
+            res.send({auth : true, result : response, token: access_token});
         })
     }else{
         res.send({msg: "Token has been Expired. Please register again"});
@@ -66,13 +68,7 @@ module.exports.login = async function(req,res){
         if(user[0].email_verified == true){
             let password = encrypt_helper.crypto_decrypt(user[0].password);
             if(password == req.body.password){
-                let access_token = encrypt_helper.jwt_encode({ id : user[0].id, role : user[0].role }, '1d')
-                let userInfo = {
-                    fname : user[0].fname,
-                    lname : user[0].lname,
-                    email : user[0].email,
-                    role : user[0].role
-                }
+                let access_token = encrypt_helper.jwt_encode({ id : user[0]._id, role : user[0].role }, '1d')
                 return res.cookie("access_token", access_token, {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === "production",
@@ -93,6 +89,53 @@ module.exports.login = async function(req,res){
 const emailExist = async (email) =>{
     const user = await Users.find({email : email}).select('-__v');
     return await user;
+}
+
+module.exports.forgetPassword = function(req,res){
+    emailExist(req.body.email).then((response)=>{
+        if(response.length > 0){
+            let password = Math.random().toString(36).slice(2)
+            let cipherPassword = encrypt_helper.crypto_encrypt(password);
+            req.body.password = cipherPassword;
+            let emailBody = { ... req.body };
+            emailBody.password = password;
+            Users.findOneAndUpdate(
+                { email : req.body.email },
+                { $set: { forget_password : 1, password : cipherPassword } },
+                { returnOriginal: false }
+             ).then(response => {
+                email_helper.send_email('Reset Password','./views/forget_password.ejs',req.body.email,emailBody);
+                res.send({
+                    exist: true,
+                    msg:"Password has been sent to "+req.body.email,
+                    status: 'success'
+                })
+            })
+        }else{
+            res.send({
+                exist: false,
+                msg:"Incorrect Email.",
+                status: 'error'
+            })    
+        }
+    });
+}
+
+module.exports.changePassword = async function(req,res){
+    let cipherPassword = encrypt_helper.crypto_encrypt(req.body.new_password);
+    Users.findOneAndUpdate(
+        { email : req.body.email },
+        { $set: { password : cipherPassword, forget_password : 0 } },
+        { returnOriginal: false }
+     ).then(response => {
+        let access_token = encrypt_helper.jwt_encode({ id : response._id, role : response.role }, '1d')
+        return res.cookie("access_token", access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            })
+            .status(200)
+            .send({auth : true, result : response, token: access_token});
+    })
 }
 
 module.exports.testAddUser = function(req,res){

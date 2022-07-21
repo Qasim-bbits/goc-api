@@ -23,6 +23,11 @@ const RateTypes = mongoose.model(
             required : false,
             minlength : 0
         },
+        service_fee : {
+            type : Number,
+            required : false,
+            minlength : 0
+        },
         Monday : {
             type : Boolean,
             required : false,
