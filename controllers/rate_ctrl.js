@@ -44,10 +44,14 @@ module.exports.getQRRateById = async function (req, res){
     if(req.body.zone_type == 2){
         let startDate = moment().toDate();
         startDate.setHours(6);
+        startDate.setMinutes(0);
         let endDate = moment().toDate();
         endDate.setHours(18);
-        console.log(startDate,endDate,moment().toDate())
-        if(moment().toDate() <= endDate && moment().toDate() >= startDate){
+        endDate.setMinutes(0);
+        console.log(moment(startDate).format())
+        console.log(moment(endDate).format())
+        console.log(moment().format())
+        if(moment().format() <= moment(endDate).format() && moment().format() >= moment(startDate).format()){
             const parkings = await Parkings.find({
                 $and: [
                     {
@@ -187,6 +191,11 @@ module.exports.addRateType = function(req,res){
 module.exports.getRateTypes = async function (req, res){
     const rateType = await RateTypes.find().select('-__v');
     res.send(rateType);
+}
+
+module.exports.getAllSteps = async function (req, res){
+    const rateSteps = await RateSteps.find().select('-__v');
+    res.send(rateSteps);
 }
 
 module.exports.editRateType = async function (req, res){

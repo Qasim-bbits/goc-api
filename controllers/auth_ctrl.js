@@ -50,12 +50,9 @@ module.exports.verify = function(req,res){
             { returnOriginal: false }
          ).then(response => {
             if(!response) {
-                return res.send({
-                    msg: "Token has been Expired. Please register again"
-                });
+                return res.send({auth : false, msg: "Token has been Expired. Please register again"});
             }
-            let access_token = encrypt_helper.jwt_encode({ id : response._id, role : response.role }, '1d')
-            res.send({auth : true, result : response, token: access_token});
+            res.send({auth : true, msg: "Verified"});
         })
     }else{
         res.send({auth : false, msg: "Token has been Expired. Please register again"});
@@ -99,6 +96,7 @@ module.exports.forgetPassword = function(req,res){
             req.body.password = cipherPassword;
             let emailBody = { ... req.body };
             emailBody.password = password;
+            emailBody.fname = response[0].fname;
             Users.findOneAndUpdate(
                 { email : req.body.email },
                 { $set: { forget_password : 1, password : cipherPassword } },

@@ -63,6 +63,7 @@ Routes.route('/editRateType').post(rate_ctrl.editRateType);
 Routes.route('/editRateStep').post(rate_ctrl.editRateStep);
 Routes.route('/delRateType').post(rate_ctrl.delRateType);
 Routes.route('/delRateStep').post(rate_ctrl.delRateStep);
+Routes.route('/getAllSteps').get(rate_ctrl.getAllSteps);
 
 //routes for plate
 Routes.route('/getPlatesByUser').post(plate_ctrl.getPlatesByUser);

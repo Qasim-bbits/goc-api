@@ -72,7 +72,7 @@ module.exports.emailReciept = async function(req,res){
         amount : parkings[0].amount,
         parking_id : parkings[0].parking_id,
         plate : parkings[0].plate,
-        service_fee : parkings[0].service_fee,
+        service_fee : parseFloat(parkings[0].service_fee)/100,
       }
       let emailRes = await email_helper.send_email('Parking Receipt','./views/receipt.ejs',parkings[0].user.email,emailBody);
       res.send({
