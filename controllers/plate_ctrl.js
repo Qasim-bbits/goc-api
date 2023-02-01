@@ -10,7 +10,7 @@ module.exports.addPlate = function(req,res){
 }
 
 module.exports.getPlatesByUser = async function (req, res){
-    const plates = await Plates.find({user_id : req.body.id}).select('-__v');
+    const plates = await Plates.find({user_id : req.body.id}).sort({_id: -1}).select('-__v');
     res.send(plates);
 }
 

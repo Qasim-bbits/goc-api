@@ -1,7 +1,6 @@
 var jwt = require('jsonwebtoken');
 var CryptoJS = require("crypto-js");
 var constants = require('../lib/constant');
-var constants = require('../lib/constant');
 
 module.exports.jwt_encode = function(excryptedValue,expiresIn){
   var token = jwt.sign(excryptedValue, constants.jwtKey, { expiresIn: expiresIn });

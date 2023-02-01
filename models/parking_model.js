@@ -4,7 +4,7 @@ const Parkings = mongoose.model(
     'Parkings',
     new mongoose.Schema({
         amount : {
-            type : String,
+            type : Number,
             required : false,
             minlength : 0
         },
@@ -15,6 +15,12 @@ const Parkings = mongoose.model(
         },
         parking_id : {
             type : Number,
+            required : false,
+            minlength : 0
+        },
+        org : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Organizations',
             required : false,
             minlength : 0
         },
@@ -52,6 +58,11 @@ const Parkings = mongoose.model(
             required : false,
             minlength : 0
         },
+        ticket : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
         plate : {
             type : String,
             required : false,
@@ -64,6 +75,11 @@ const Parkings = mongoose.model(
         },
         to : {
             type : Date,
+            required : false,
+            minlength : 0
+        },
+        parking_type : {
+            type : Number,
             required : false,
             minlength : 0
         }

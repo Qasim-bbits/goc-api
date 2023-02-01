@@ -7,6 +7,12 @@ const BusinessPlates = mongoose.model(
             type : String,
             required : false,
             minlength : 0
+        },
+        zone : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Zones',
+            required : false,
+            minlength : 0
         }
     })
 )

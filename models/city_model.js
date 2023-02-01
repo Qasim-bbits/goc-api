@@ -12,7 +12,13 @@ const Cities = mongoose.model(
             type : Array,
             required : false,
             minlength : 0
-        }
+        },
+        org : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Organizations',
+            required : false,
+            minlength : 0
+        },
     })
 )
 exports.Cities = Cities;

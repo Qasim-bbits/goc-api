@@ -1,4 +1,4 @@
-var {PermitType} = require('../models/permitType_model');
+var {PermitType} = require('../models/permit_type_model');
 
 module.exports.getPermitType = async function (req, res){
     const permitType = await PermitType.find().select('-__v');

@@ -1,28 +1,29 @@
 const mongoose = require('mongoose');
 
-const TaxRate = mongoose.model(
-    'TaxRate',
+const Tickets = mongoose.model(
+    'Tickets',
     new mongoose.Schema({
-        name : {
+        org : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Organizations',
+            required : false,
+            minlength : 0
+        },
+        ticket_name : {
             type : String,
             required : false,
             minlength : 0
         },
-        rate : {
+        ticket_num_min : {
             type : Number,
             required : false,
             minlength : 0
         },
-        valid_from : {
-            type : Date,
-            required : false,
-            minlength : 0
-        },
-        valid_to : {
-            type : Date,
+        ticket_num_next : {
+            type : Number,
             required : false,
             minlength : 0
         },
     })
 )
-exports.TaxRate = TaxRate;
+exports.Tickets = Tickets;

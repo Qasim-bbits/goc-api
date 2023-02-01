@@ -57,6 +57,26 @@ const RateTypes = mongoose.model(
             type : Boolean,
             required : false,
             minlength : 0
+        },
+        Sunday : {
+            type : Boolean,
+            required : false,
+            minlength : 0
+        },
+        start_date : {
+            type : Date,
+            required : false,
+            minlength : 0
+        },
+        end_date : {
+            type : Date,
+            required : false,
+            minlength : 0
+        },
+        special_rate : {
+            type : Boolean,
+            required : false,
+            minlength : 0
         }
     })
 )

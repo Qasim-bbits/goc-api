@@ -3,32 +3,37 @@ const mongoose = require('mongoose');
 const Organizations = mongoose.model(
     'Organizations',
     new mongoose.Schema({
-        name : {
+        org_name : {
             type : String,
             required : false,
             minlength : 0
         },
-        email : {
+        sub_domain : {
             type : String,
             required : false,
             minlength : 0
         },
-        address : {
+        service_fee : {
+            type : Number,
+            required : false,
+            minlength : 0
+        },
+        logo : {
             type : String,
             required : false,
             minlength : 0
         },
-        ph_no : {
+        color : {
             type : String,
             required : false,
             minlength : 0
         },
-        website : {
+        payment_gateway : {
             type : String,
             required : false,
             minlength : 0
         },
-        tax_info : {
+        payment_envoirnment : {
             type : String,
             required : false,
             minlength : 0
@@ -43,27 +48,26 @@ const Organizations = mongoose.model(
             required : false,
             minlength : 0
         },
-        header_logo : {
+        moneris_store_id: {
             type : String,
             required : false,
             minlength : 0
         },
-        footer_logo : {
+        moneris_api_token : {
             type : String,
             required : false,
             minlength : 0
         },
-        receipt_logo : {
+        moneris_checkout_id : {
             type : String,
             required : false,
             minlength : 0
         },
-        url : {
+        moneris_environment : {
             type : String,
             required : false,
             minlength : 0
-        },
-
+        }
     })
 )
 exports.Organizations = Organizations;

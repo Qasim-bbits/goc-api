@@ -38,6 +38,12 @@ const Users = mongoose.model(
             required : false,
             minlength : 0
         },
+        org : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Organizations',
+            required : false,
+            minlength : 0
+        },
         role : {
             type : String,
             required : false,

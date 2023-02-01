@@ -23,7 +23,23 @@ const Zones = mongoose.model(
             type : Number,
             required : false,
             minlength : 0
-        }
+        },
+        visitor_pass_time : {
+            type : Number,
+            required : false,
+            minlength : 0
+        },
+        org : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Organizations',
+            required : false,
+            minlength : 0
+        },
+        tenant_zone : {
+            type : Boolean,
+            required : false,
+            minlength : 0
+        },
     })
 )
 exports.Zones = Zones;

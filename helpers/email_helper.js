@@ -11,7 +11,7 @@ var transporter = nodemailer.createTransport({
   });
 module.exports.send_email = async function(subject,htmlFile,recipient,body){
     var mailOptions = {
-        from: 'Connected GOC',
+        from: 'Connected Parking',
         to: recipient,
         subject: subject,
         text: 'That was easy!',
