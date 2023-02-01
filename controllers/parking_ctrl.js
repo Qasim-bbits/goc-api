@@ -229,7 +229,7 @@ module.exports.delAllParkings = async function (req, res){
 }
 
 module.exports.mobileParking = async function(req,res){
-  if(req.body.amount == 0){
+  if(req.body.amount === 0){
     req.body.from = moment(req.body.from, 'MMMM Do YYYY, hh:mm a' ).format()
     req.body.to = moment(req.body.to, 'MMMM Do YYYY, hh:mm a' ).format()
     req.body.parking_id = Math.floor(100000 + Math.random() * 900000)
@@ -264,13 +264,43 @@ module.exports.mobileParking = async function(req,res){
         parkings.save();
         res.send(parkings);
       } catch (error) {
-        res.json({
-          message: error,
-          success: false,
-        });
+        if (error.type === 'StripeCardError') {
+          if (error.payment_intent.charges.data[0].outcome.type === 'blocked') {
+            res.json({
+              message: 'Payment blocked for suspected fraud.',
+              success: false,
+            });
+          } else if (error.code === 'card_declined') {
+            res.json({
+              message: 'Payment declined by the issuer.',
+              success: false,
+            });
+          } else if (error.code === 'expired_card') {
+            res.json({
+              message: 'Card expired.',
+              success: false,
+            });
+          } else {
+            res.json({
+              message: 'Other card error.',
+              success: false,
+            });
+          }
+        } else if (error.type === 'StripeInvalidRequestError') {
+          res.json({
+            message: 'An invalid request occurred.',
+            success: false,
+          })
+        } else {
+          res.json({
+            message: 'Another problem occurred, maybe unrelated to Stripe.',
+            success: false,
+          });
+        }
       }
     } catch (e) {
       console.log(e)
+      res.send(e)
     }
   }
 }
