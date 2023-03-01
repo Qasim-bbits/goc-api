@@ -5,6 +5,7 @@ var email_helper = require('../helpers/email_helper');
 var encrypt_helper = require('../helpers/encrypt_helper');
 const constant = require('../lib/constant');
 const { Agent_Permissions } = require('../models/agent_permission_model');
+const { Organizations } = require('../models/organizations_model');
 
 module.exports.getUsers = async function (req, res){
     let body = {}
@@ -31,7 +32,7 @@ module.exports.delUser = async function (req, res){
 }
 
 module.exports.addUser = function(req,res){
-    emailExist(req.body.email).then((response)=>{
+    emailExist(req.body.email).then(async (response)=>{
         if(response.length > 0 && response[0].email_verified && response[0].org == req.body.org_id){
             res.send({
                 exist: true,
@@ -57,7 +58,6 @@ module.exports.addUser = function(req,res){
             req.body.forget_password = 1;
             req.body.org = req.body.org_id;
             let emailBody = { ... req.body };
-            emailBody.path = constant.client_url;
             emailBody.password = password;
             const user = new Users(req.body);
             user.save();
@@ -83,6 +83,10 @@ module.exports.addUser = function(req,res){
                 const agent_permission = new Agent_Permissions(obj);
                 agent_permission.save();
             }
+            const org = await Organizations.findOne({_id: req.body.org}).select('-__v');
+            emailBody.logo = org.logo;
+            emailBody.color = org.color;
+            emailBody.path = constant.client_url;
             email_helper.send_email('Confirmation Email','./views/confirm_reset_email.ejs',req.body.email,emailBody);
             res.send({
                 exist: false,
@@ -160,4 +164,9 @@ module.exports.editProfile = async function (req, res){
     });
     // const plates = await Plates.deleteOne({_id : req.body.id}).select('-__v');
     // res.send(plates);
+}
+
+module.exports.getAgents = async function (req, res){
+    const users = await Users.find({role: 'agent'}).sort({_id: -1}).select('-__v');
+    res.send(users);
 }

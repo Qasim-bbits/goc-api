@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Hello world!</title>
+  </head>
+  <body>
+    <div style="text-align: center;">
+      <img src="https://bbits.solutions/cwp_api/uploads/logo/logo-1666642836487.jpeg" width="20%"/>
+    </div>
+    <h1 style="font-family: monospace;color:#093897;">Parking Report</h1>
+    <table style="border-collapse: collapse;">
+      <tr style="background: #093897; color: aliceblue;">
+        <th style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">Organization</th>
+        <th style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">City</th>
+        <th style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">Zone</th>
+        <th style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">Email</th>
+        <th style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">Parking ID</th>
+        <th style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">Plate</th>
+        <th style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">Service Fee</th>
+        <th style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">Amount</th>
+        <th style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">Start Date/Time - End Date/Time</th>
+      </tr>
+      {{#each report}}
+      <tr style="border-bottom: 1px solid #c7c6c6;">
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">{{this.org.org_name}}</td>
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">{{this.city.city_name}}</td>
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">{{this.zone.zone_name}}</td>
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">{{this.user.email}}</td>
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">{{this.parking_id}}</td>
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">{{this.plate}}</td>
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">{{this.service_fee}}</td>
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">{{this.amount}}</td>
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace;">{{this.from}} - {{this.to}}</td>
+      </tr>
+      {{/each}}
+      <tr style="border-bottom: 1px solid #c7c6c6;">
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace; font-weight: bold;" colspan="6">Total</td>
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace; font-weight: bold;">{{total.service_fee}}</td>
+        <td style="text-align: left;max-width: 100%;white-space: nowrap;padding: 7px 16px;font-family: monospace; font-weight: bold;" colspan="2">{{total.amount}}</td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -277,12 +277,13 @@ module.exports.getRateSteps = async function(req,res){
     if(rates.length == 0){
         rates= await RateTypes.find({rate_id : req.body.id, special_rate : false}).select('-__v');
     }
-console.log(current_time, now, 'before');
+// console.log(current_time, now, 'before');
     let rateSteps = await generateStep(rates, current_time, now, req.body.plate, org);
     // let mergeSteps = await [...rateSteps];
     current_time = moment(rateSteps[rateSteps.length - 1].time_desc, 'MMMM Do YYYY, hh:mm a').format();
     now = moment(current_time).format("L");
-    console.log(rateSteps[rateSteps.length - 1],'after');
+    console.log(rates,'rates');
+    // console.log(rateSteps[rateSteps.length - 1],'after');
     let mergeSteps = await [...rateSteps];
     if(rateSteps[rateSteps.length - 1].time < 1440){
         let nextStep = await generateStep(rates, current_time, now, req.body.plate, org);
@@ -353,7 +354,8 @@ const generateStep = async(rates, current_time, now, plate, org)=>{
             const rateStep = await RateSteps.find({rate_type_id : x._id}).select('-__v');
             await Promise.all(rateStep.map(async (y)=>{
                 added_date = moment(current_time).add(y.time, 'minutes').format('MMMM Do YYYY, hh:mm a');
-                if(rateStep[rateStep.length - 1].time >= 1440){
+                console.log(x)
+                if(rateStep[rateStep.length - 1].time >= 1440 && x.flat_rate){
                     end_time = moment(current_time).add(y.time, 'minutes').format()
                 }
                 let last_step = moment(current_time).add(y.time, 'minutes').format() >= moment(end_time).format();
@@ -455,6 +457,7 @@ const showDiff = (added_date)=>{
                 special_rate : x.special_rate,
                 start_date : x.start_date,
                 end_date : x.end_date,
+                flat_rate: x.flat_rate,
                 rate_step : rateSteps
             }
             rateDetail.push(obj);

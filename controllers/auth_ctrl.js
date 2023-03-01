@@ -28,16 +28,18 @@ module.exports.signup = function(req,res){
             let cipherPassword = encrypt_helper.crypto_encrypt(req.body.password);
             var token = encrypt_helper.jwt_encode({ email: req.body.email, password: req.body.password }, '1h');
             req.body.password = cipherPassword;
-            const org = await Organizations.findOne({_id : req.body.org}).select('-__v');
             req.body.token = token;
             req.body.email_verified = 0;
             req.body.forget_password = 0;
+            const org = await Organizations.findOne({_id : req.body.org}).select('-__v');
             let emailBody = { ... req.body };
-            if(org.sub_domain == 'root'){
+	        if(org.sub_domain == 'root'){
                 emailBody.path = constant.client_url;
             }else{
                 emailBody.path = constant.http + org.sub_domain + '.' +constant.domain;
             }
+            emailBody.logo = org.logo;
+            emailBody.color = org.color;
             const signup = new Users(req.body);
             signup.save();
             email_helper.send_email('Confirmation Email','./views/confirmation_email.ejs',req.body.email,emailBody);
@@ -145,7 +147,11 @@ module.exports.forgetPassword = function(req,res){
                 { email : req.body.email },
                 { $set: { forget_password : 1, password : cipherPassword } },
                 { returnOriginal: false }
-             ).then(response => {
+             ).then(async response => {
+                const org = await Organizations.findOne({_id: response.org}).select('-__v');
+                emailBody.logo = org.logo;
+                emailBody.color = org.color;
+                emailBody.path = constant.client_url;
                 email_helper.send_email('Reset Password','./views/forget_password.ejs',req.body.email,emailBody);
                 res.send({
                     exist: true,

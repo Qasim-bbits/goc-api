@@ -23,6 +23,7 @@
     "multer": "^1.4.4",
     "nodemailer": "^6.7.2",
     "nodemon": "^2.0.19",
+    "pdf-creator-node": "^2.3.5",
     "stripe": "^9.9.0",
     "utf8-bytes": "0.0.1",
     "xml2js": "^0.4.23"

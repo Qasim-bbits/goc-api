@@ -18,6 +18,7 @@ var parking_ctrl = require('../controllers/parking_ctrl');
 var user_ctrl = require('../controllers/user_ctrl');
 var moneris_ctrl = require('../controllers/moneris_ctrl');
 var external_parking_config_ctrl = require('../controllers/external_parking_config_ctrl');
+var reporting_ctrl = require('../controllers/reporting_ctrl');
 const { authorization } = require('../helpers/auth_helper');
 const { upload } = require('../helpers/common_helper');
 
@@ -129,6 +130,7 @@ Routes.route('/addUser').post(user_ctrl.addUser);
 Routes.route('/editUser').post(user_ctrl.editUser);
 Routes.route('/getUserProfile').post(user_ctrl.getUserProfile);
 Routes.route('/editProfile').post(user_ctrl.editProfile);
+Routes.route('/getAgents').get(user_ctrl.getAgents);
 
 //routes for modules
 Routes.route('/getModules').get(module_ctrl.getModules);
@@ -173,5 +175,11 @@ Routes.route('/getZoneByOrg').post(external_parking_config_ctrl.getZoneByOrg);
 Routes.route('/addExternalParkingConfig').post(external_parking_config_ctrl.addExternalParkingConfig);
 Routes.route('/editExternalParkingConfig').post(external_parking_config_ctrl.editExternalParkingConfig);
 Routes.route('/delExternalParkingConfig').post(external_parking_config_ctrl.delExternalParkingConfig);
+
+//routes for Reporting
+Routes.route('/getAllKeys').post(reporting_ctrl.getAllKeys);
+Routes.route('/generateReport').post(reporting_ctrl.generateReport);
+Routes.route('/exportPDF').post(reporting_ctrl.exportPDF);
+Routes.route('/generateTicketIssuedReport').post(reporting_ctrl.generateTicketIssuedReport);
 
 module.exports = Routes;

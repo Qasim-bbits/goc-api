@@ -77,6 +77,11 @@ const RateTypes = mongoose.model(
             type : Boolean,
             required : false,
             minlength : 0
+        },
+        flat_rate : {
+            type : Boolean,
+            required : false,
+            minlength : 0
         }
     })
 )

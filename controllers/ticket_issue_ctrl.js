@@ -14,13 +14,14 @@ module.exports.getTicketsIssued = async function (req, res){
   if(user.length > 0 && user[0].role !== 'root'){
       body['org'] = mongoose.Types.ObjectId(req.body.org_id);
   }
-  const TicketIssued = await Ticket_Issued.find(body).
+  const TicketIssued = await Ticket_Issued.find(body, { images: 0}).
   populate('org').
   populate('city').
   populate('zone').
   populate('parking').
   populate('ticket').
   sort({_id: -1}).select('-__v');
+console.log(TicketIssued);
   res.send(TicketIssued);
 }
 
@@ -31,11 +32,11 @@ module.exports.IssueTicket = async function(req,res){
   if(ticket !==  null){
     req.body.ticket_num = ticket.ticket_num_next;
     const ticketIssued = new Ticket_Issued(req.body);
-    Tickets.findByIdAndUpdate(req.body.ticket, {ticket_num_next: ticket.ticket_num_next+1}, {new: true})
+    Tickets.updateMany({org: req.body.org}, {"$set":{ticket_num_next: ticket.ticket_num_next+1}})
     .then(response =>{
       ticketIssued.save();
       let result = ticketIssued.toObject();
-      result.ticket_num_next = response.ticket_num_next;
+      result.ticket_num_next = ticket.ticket_num_next+1;
       res.send(result);
     })
   }else{
@@ -128,6 +129,7 @@ module.exports.payTicket = async function(req,res){
         });
         req.body.paymentMethod = payment.payment_method;
         req.body.ticket_status = 'paid';
+        req.body.paid_at = moment().format();
         Ticket_Issued.findByIdAndUpdate(req.body.id, req.body, {new: true})
         .then(response =>{
             res.send(response);

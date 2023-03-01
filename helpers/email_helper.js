@@ -22,6 +22,7 @@ module.exports.send_email = async function(subject,htmlFile,recipient,body){
         if (error) {
           console.log(error);
         } else {
+          console.log(1)
           return 1;
         }
       });

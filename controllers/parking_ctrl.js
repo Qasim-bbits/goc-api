@@ -12,6 +12,7 @@ const { Ticket_Issued } = require('../models/ticket_issued_model');
 moment.tz.setDefault("America/New_York");
 
 module.exports.buyParking = async function(req,res){
+    req.body.plate = req.body.plate.replace(/\s+/g, '');
     const org = await Organizations.findOne({_id: req.body.org}).select('-__v');
     if(req.body.amount == 0 || org.payment_gateway == 'moneris'){
       req.body.from = moment(req.body.from, 'MMMM Do YYYY, hh:mm a' ).format()
