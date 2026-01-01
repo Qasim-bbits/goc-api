@@ -24,6 +24,11 @@ const Tickets = mongoose.model(
             required : false,
             minlength : 0
         },
+        ticket_type : {
+            type : String,
+            required : false,
+            enum: ["normal", "booting"]
+        },
     })
 )
 exports.Tickets = Tickets;

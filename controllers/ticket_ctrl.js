@@ -62,3 +62,7 @@ module.exports.delTicket = async function(req,res){
     res.send(ticket);
 }
 
+module.exports.getTicketsByOrg = async function (req, res){
+    const tickets = await Tickets.find({org: req.body.org_id}).populate('org').sort({ "ticket_name": 1 }).select('-__v');
+    res.send(tickets);
+}

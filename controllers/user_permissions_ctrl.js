@@ -124,3 +124,22 @@ module.exports.delPermission = async function(req,res){
     const user_permissions = await User_Permissions.deleteOne({_id : req.body.id}).select('-__v');
     res.send(user_permissions);
 }
+
+module.exports.EnableUserPermission = async function(req,res){
+    try {
+        User_Permissions.findOneAndUpdate({user: req.body.user}, 
+            { $set: req.body },
+            { returnOriginal: false }
+        )
+        .then(async response => {
+            if(!response) {
+                return res.status(404).json({
+                    msg: "Data not found with id " + req.body.id
+                });
+            }
+            res.json(response);
+        })
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message });
+    }
+}

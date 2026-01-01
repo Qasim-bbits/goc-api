@@ -67,7 +67,53 @@ const Organizations = mongoose.model(
             type : String,
             required : false,
             minlength : 0
-        }
+        },
+        ssl_installed : {
+            type : Boolean,
+            default : false
+        },
+        condition_of_use : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        privacy_policy : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        literal_sheet_url: {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        whatsapp_no: {
+            type : Number,
+            required : false,
+            minlength : 0
+        },
+        hide_login_button: {
+            type : Boolean,
+            default: false
+        },
+        ticket_format : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        reporting_url : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        enable_custom_public_notes: {
+            type : Boolean,
+            default: false
+        },
+        enable_custom_private_notes: {
+            type : Boolean,
+            default: false
+        },
     })
 )
 exports.Organizations = Organizations;

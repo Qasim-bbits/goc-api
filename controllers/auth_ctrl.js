@@ -6,6 +6,8 @@ const { User_Permissions } = require('../models/user_permission_model');
 const { Modules } = require('../models/modules_model');
 const { Organizations } = require('../models/organizations_model');
 const { Agent_Permissions } = require('../models/agent_permission_model');
+const { EmailTemplates } = require('../models/email_template_model');
+const { stringFormat } = require('../helpers/common_helper');
 
 module.exports.signup = function(req,res){
     emailExist(req.body).then(async (response)=>{
@@ -40,9 +42,22 @@ module.exports.signup = function(req,res){
             }
             emailBody.logo = org.logo;
             emailBody.color = org.color;
+            emailBody.sendingEmail = constant.email;
+            emailBody.orgName = org.org_name;
+            emailBody.API_URL = constant.API_URL;
+            emailBody.COMPANY_NAME = constant.COMPANY_NAME;
             const signup = new Users(req.body);
             signup.save();
-            email_helper.send_email('Confirmation Email','./views/confirmation_email.ejs',req.body.email,emailBody);
+            const template = await EmailTemplates.findOne({
+                "org_id": req.body.org,
+                "template_name": "confirmation_email"
+            }).select('-__v');
+            if(template) {
+                emailBody.content = stringFormat(template.template, {orgName: org.org_name, verifyLink: `${emailBody.path}verify/${token}`});
+                email_helper.send_email(template.subject,'./views/email_template.ejs',req.body.email,emailBody);
+            }else{
+                email_helper.send_email('Confirmation Email','./views/confirmation_email.ejs',req.body.email,emailBody);
+            }
             res.send({
                 exist: false,
                 msg:"Email has been sent to "+req.body.email+". Please verify your account to proceed",
@@ -50,6 +65,35 @@ module.exports.signup = function(req,res){
             })
         }
     });
+}
+
+module.exports.resend = async function(req,res){
+    const org = await Organizations.findOne({_id : req.body.org}).select('-__v');
+    let emailBody = { ... req.body };
+    if(org.sub_domain == 'root'){
+        emailBody.path = constant.client_url;
+    }else{
+        emailBody.path = constant.http + org.sub_domain + '.' +constant.domain;
+    }
+    emailBody.logo = org.logo;
+    emailBody.color = org.color;
+    emailBody.sendingEmail = constant.email;
+    emailBody.orgName = org.org_name;
+    emailBody.API_URL = constant.API_URL;
+    emailBody.COMPANY_NAME = constant.COMPANY_NAME;
+    var token = encrypt_helper.jwt_encode({ email: req.body.email}, '1h');
+    Users.findOneAndUpdate(
+        { email : req.body.email },
+        { $set: { token : token } },
+        { returnOriginal: false }
+     ).then(response => {
+        if(!response) {
+            return res.send({success : false, msg: "Incorrect email"});
+        }
+        emailBody.token = token;
+        email_helper.send_email('Confirmation Email','./views/confirmation_email.ejs',req.body.email,emailBody);
+        res.send({success : true, msg:"Email has been sent to "+req.body.email+". Please verify your account to proceed"});
+    })
 }
 
 module.exports.verify = function(req,res){
@@ -72,6 +116,7 @@ module.exports.verify = function(req,res){
 
 module.exports.login = async function(req,res){
     const user = await Users.find({email : req.body.email, org: req.body.org_id}).select('-__v');
+    console.log(user)
     if(user.length > 0){
         if(user[0].email_verified == true){
             let password = encrypt_helper.crypto_decrypt(user[0].password);
@@ -92,7 +137,7 @@ module.exports.login = async function(req,res){
                 res.send({auth : false, msg:"Incorrect Password"})
             }   
         }else{
-            res.send({auth : false, msg:"Email not verified yet, Please check your email"})
+            res.send({auth : false, msg:"Email not verified yet, Please check your email", not_verified: true})
         }
     }else{
         res.send({auth : false, msg:"Incorrect Email"})
@@ -105,8 +150,13 @@ module.exports.agent_login = async function(req,res){
         if(user[0].email_verified == true){
             let password = encrypt_helper.crypto_decrypt(user[0].password);
             if(password == req.body.password){
-                let access_token = encrypt_helper.jwt_encode({ id : user[0]._id, role : user[0].role }, '1d')
+                let access_token = encrypt_helper.jwt_encode({ id : user[0]._id, role : user[0].role, date: new Date() }, '1d')
                 let response = user[0].toObject();
+                if(response.org.sub_domain == 'root'){
+                    response.organizations = await Organizations.find().select('-__v');
+                }else{
+                    response.organizations = [user[0].org];
+                };
                 let agent_permissions = await Agent_Permissions.
                 findOne({ user: user[0]._id }).
                 populate('cities').
@@ -152,7 +202,20 @@ module.exports.forgetPassword = function(req,res){
                 emailBody.logo = org.logo;
                 emailBody.color = org.color;
                 emailBody.path = constant.client_url;
-                email_helper.send_email('Reset Password','./views/forget_password.ejs',req.body.email,emailBody);
+                emailBody.sendingEmail = constant.email;
+                emailBody.orgName = org.org_name;
+                emailBody.API_URL = constant.API_URL;
+                emailBody.COMPANY_NAME = constant.COMPANY_NAME;
+                const template = await EmailTemplates.findOne({
+                    "org_id": response.org,
+                    "template_name": "forget_password"
+                }).select('-__v');
+                if(template) {
+                    emailBody.content = stringFormat(template.template, {orgName: org.org_name, password: emailBody.password});
+                    email_helper.send_email(template.subject,'./views/email_template.ejs',req.body.email,emailBody);
+                }else{
+                    email_helper.send_email('Reset Password','./views/forget_password.ejs',req.body.email,emailBody);
+                }
                 res.send({
                     exist: true,
                     msg:"Password has been sent to "+req.body.email,
@@ -242,13 +305,14 @@ module.exports.addRoot = async function(req,res){
                             module.save();
                             x.module = module._id;
                             x.org = organization._id;
-                            x.user = user._id
-                            console.log(x);
+                            x.user = user._id;
+                            x.can_add = true;
+                            x.can_delete = true;
+                            x.can_edit = true;
+                            x.can_view = true;
                             const permission = await new User_Permissions(x);
                             permission.save();
-                            console.log(permission);
                         })
-                        email_helper.send_email('Organization Registerd','./views/create_org.ejs',req.body.email,emailBody);
                         res.send({
                             exist: false,
                             msg:"Organization registered successfully and temporary password is sent to "+req.body.email+"",

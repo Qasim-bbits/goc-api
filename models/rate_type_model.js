@@ -82,7 +82,17 @@ const RateTypes = mongoose.model(
             type : Boolean,
             required : false,
             minlength : 0
-        }
+        },
+        end_of_year_month : {
+            type : Boolean,
+            required : false,
+            minlength : 0
+        },
+        rate_type_period : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
     })
 )
 exports.RateTypes = RateTypes;

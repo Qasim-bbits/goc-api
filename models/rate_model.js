@@ -18,11 +18,23 @@ const Rates = mongoose.model(
             required : false,
             minlength : 0
         },
+        is_visitor_pass: {
+            type : Boolean,
+            default : false,
+        },
+        enable_custom_rate: {
+            type : Boolean,
+            default : false,
+        },
         qr_code : {
             type : Boolean,
             required : false,
             minlength : 0
-        }
+        },
+        is_whitelist: {
+            type : Boolean,
+            default : false,
+        },
     })
 )
 exports.Rates = Rates;

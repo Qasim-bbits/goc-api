@@ -4,6 +4,8 @@ var email_helper = require('../helpers/email_helper');
 var encrypt_helper = require('../helpers/encrypt_helper');
 const constant = require('../lib/constant');
 const { User_Permissions } = require('../models/user_permission_model');
+const { installSSL } = require('../helpers/install_ssl_helper');
+const fs = require('fs');
 
 module.exports.getOrganizations = async function (req, res){
     const organizations = await Organizations.find().select('-__v');
@@ -62,7 +64,9 @@ module.exports.addOrganization = function(req,res){
                     }
                     req.body.logo = req.files.logo[0].path;
                     const organization = await new Organizations(req.body);
-                    organization.save();
+                    organization.save().then(()=>{
+                        installSSL();
+                    });
                     let password = req.body.password;
                     req.body.password = encrypt_helper.crypto_encrypt(req.body.password);
                     req.body.token = 0;
@@ -85,7 +89,7 @@ module.exports.addOrganization = function(req,res){
                     } catch (e) {
                         print (e);
                     }
-                    email_helper.send_email('Organization Registerd','./views/create_org.ejs',req.body.email,emailBody);
+                    // email_helper.send_email('Organization Registerd','./views/create_org.ejs',req.body.email,emailBody);
                     res.send({
                         exist: false,
                         msg:"Organization registered successfully and temporary password is sent to "+req.body.email+"",
@@ -122,7 +126,7 @@ module.exports.editOrganization = async function(req,res){
     }else{
         const org = await Organizations.find({_id : req.body.id}).select('-__v');
         req.body.logo = org[0].logo;
-        if(req.files.logo !== undefined)
+        if(req.files && req.files.logo !== undefined)
         req.body.logo = req.files.logo[0].path;
     }
     if(req.body.payment_gateway == 'stripe'){
@@ -133,6 +137,39 @@ module.exports.editOrganization = async function(req,res){
         req.body.moneris_api_token = encrypt_helper.crypto_encrypt(req.body.moneris_api_token);
         req.body.moneris_checkout_id = encrypt_helper.crypto_encrypt(req.body.moneris_checkout_id);
     }
+    Organizations.findByIdAndUpdate(req.body.id, req.body, {new: true})
+        .then(response => {
+            console.log(response)
+            if(!response) {
+                res.send({
+                    exist: false,
+                    msg:"Error Occured",
+                    status: 'error'
+                })
+            }
+            res.send({
+                exist: false,
+                msg:"Organization updated successfully",
+                status: 'success'
+            })
+        }).catch(err => {
+            console.log(err)
+            if(err.kind === 'ObjectId') {
+                res.send({
+                    exist: false,
+                    msg:"Error Occured",
+                    status: 'error'
+                })               
+            }
+            res.send({
+                exist: false,
+                msg:"Error Occured",
+                status: 'error'
+            })
+        });
+}
+
+module.exports.partialEditOrganization = async function(req,res){
     Organizations.findByIdAndUpdate(req.body.id, req.body, {new: true})
         .then(response => {
             if(!response) {
@@ -175,4 +212,14 @@ const rootExist = async (role) =>{
     }else{
         return [];
     }
+}
+
+module.exports.getOrgImage = async function (req, res){
+    const org = await Organizations.findById(req.body.id);
+    fs.readFile(org.logo, (err, data) => {
+        if (err) throw err;
+        let base64Image = Buffer.from(data, 'binary').toString('base64');
+        res.send(base64Image)        
+
+    });
 }

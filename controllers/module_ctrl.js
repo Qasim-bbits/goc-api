@@ -37,3 +37,10 @@ module.exports.delModule = async function(req,res){
     res.send(module);
 }
 
+module.exports.insertBulkModule = async function(req,res){
+    Modules.insertMany(req.body).then(function (response) {
+        res.send(response)
+    }).catch(function (err) {
+        res.status(500).json({ success: false, msg: err });
+    });
+}

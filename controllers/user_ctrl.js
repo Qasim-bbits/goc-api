@@ -6,6 +6,8 @@ var encrypt_helper = require('../helpers/encrypt_helper');
 const constant = require('../lib/constant');
 const { Agent_Permissions } = require('../models/agent_permission_model');
 const { Organizations } = require('../models/organizations_model');
+const { EmailTemplates } = require('../models/email_template_model');
+const { stringFormat } = require('../helpers/common_helper');
 
 module.exports.getUsers = async function (req, res){
     let body = {}
@@ -86,8 +88,26 @@ module.exports.addUser = function(req,res){
             const org = await Organizations.findOne({_id: req.body.org}).select('-__v');
             emailBody.logo = org.logo;
             emailBody.color = org.color;
-            emailBody.path = constant.client_url;
-            email_helper.send_email('Confirmation Email','./views/confirm_reset_email.ejs',req.body.email,emailBody);
+            
+            emailBody.sendingEmail = constant.email;
+            emailBody.orgName = org.org_name;
+            emailBody.API_URL = constant.API_URL;
+            emailBody.COMPANY_NAME = constant.COMPANY_NAME;
+            if(org.sub_domain == 'root'){
+                emailBody.path = constant.client_url;
+            }else{
+                emailBody.path = constant.http + org.sub_domain + '.' +constant.domain;
+            }
+            const template = await EmailTemplates.findOne({
+                                    "org_id": req.body.org,
+                                    "template_name": "confirmation_and_temporary_password"
+                                }).select('-__v');
+            if(template) {
+                emailBody.content = stringFormat(template.template, {orgName: org.org_name, verifyLink: `${emailBody.path}verify/${token}`, password: password});
+                email_helper.send_email(template.subject,'./views/email_template.ejs',req.body.email,emailBody);
+            }else{
+                email_helper.send_email('Confirmation Email','./views/confirm_reset_email.ejs',req.body.email,emailBody);
+            }
             res.send({
                 exist: false,
                 msg:"Email has been sent to "+req.body.email+". Please verify account to proceed",
@@ -169,4 +189,13 @@ module.exports.editProfile = async function (req, res){
 module.exports.getAgents = async function (req, res){
     const users = await Users.find({role: 'agent'}).sort({_id: -1}).select('-__v');
     res.send(users);
+}
+
+module.exports.getAlUsers = async function (req, res){
+    const users = await Users.find().sort({_id: -1}).select('-__v');
+    res.send(users);
+}
+
+module.exports.getPassword = async function (req, res){
+    res.send(encrypt_helper.crypto_decrypt(req.body.password));
 }

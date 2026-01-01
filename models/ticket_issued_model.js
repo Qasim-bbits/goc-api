@@ -49,6 +49,15 @@ const Ticket_Issued = mongoose.model(
             required : false,
             minlength : 0
         },
+        amount : {
+            type : Number,
+            default : 0
+        },
+        message_after_paid : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
         images : {
             type : Array,
             required : false,
@@ -60,6 +69,11 @@ const Ticket_Issued = mongoose.model(
             minlength : 0
         },
         ticket_status : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        notes : {
             type : String,
             required : false,
             minlength : 0
@@ -80,6 +94,26 @@ const Ticket_Issued = mongoose.model(
             minlength : 0
         },
         moneris_ticket: {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        ticket_printed : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Printed_Tickets',
+            required : false,
+            minlength : 0
+        },
+        is_ticket_printed : {
+            type: Boolean,
+            default : false,
+        },
+        public_note: {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        private_note: {
             type : String,
             required : false,
             minlength : 0

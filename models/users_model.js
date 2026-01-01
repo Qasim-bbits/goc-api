@@ -18,6 +18,11 @@ const Users = mongoose.model(
             required : false,
             minlength : 0
         },
+        unit : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
         mobile_no : {
             type : String,
             required : false,
@@ -61,6 +66,11 @@ const Users = mongoose.model(
         },
         forget_password : {
             type : Boolean,
+            required : false,
+            minlength : 0
+        },
+        no_of_visitors : {
+            type : Number,
             required : false,
             minlength : 0
         }

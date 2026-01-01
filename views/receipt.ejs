@@ -1,118 +1,143 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receipt</title>
-    <style>
-    *{
-        margin:0;
-        padding:0;
-      
-    }
-
-    hr{
-  
-        height:1px;
-        width:100%;
-        background: rgb(166, 164, 164);
-    }
-
-.parking-text{
-     font-size:40px;
-    font-weight: 700; 
-    color:#0F296E; 
-    padding:20px;
-}
-@media (max-width: 768px) {
-   .logo-img{
-    height:100%;
-   }
-   .parking-text{
-    font-size:25px;
-   }
-}
-    </style>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width">
 </head>
-<body>
-    <section>
-    <div style="width: 100%; display:flex;">
-        <div style="width: 70%;">
-            <img src="https://bbits.solutions/cwp_api/uploads/icons/10.png.png" width="30%">
-        </div>
-        <div style="width: 30%; text-align: end; margin: auto;">
-            <h2 style="color:#0F296E; font-size:32px;">PARKING RECEIPT</h2>
-        </div>
-    </div>
-    </section>
-    <section>
-    <div style="width: 90%; margin:auto" >
-       
-        <hr style="height: 1px;border: none;color: #c2c2c2;background-color: #bbb8b8;"/>
-        <div style="width: 100%; display:flex; margin-top: 13px;">
-            <div style="width: 50%; display: flex;">
-                <img src="https://bbits.solutions/cwp_api/uploads/icons/4.png" height="50px">
-                <h3 style="color:#0F296E; font-size:22px; margin: auto; margin-left: 0;">PARKING ID</h3>
-            </div>
-            <div style="width: 50%; text-align: end; margin: auto;">
-                <h3 style="color:#0F296E;font-size:22px;"><%= parking_id %></h3>
-            </div>
-        </div>
 
-        <div style="display:flex; text-align:center; width: 100%; margin-bottom: 15px;">
-        <div style="width: 33%;">
-            <img src="https://bbits.solutions/cwp_api/uploads/icons/1.png" width="100px" alt="">
-            <h3 style="color:#0F296E"><%= startDate %></h3>
-            <h3 style="color:#0F296E; font-size:28px"><%= startTime %></h3>
-        </div>
-        <div style="width: 34%;">
-            <img src="https://bbits.solutions/cwp_api/uploads/icons/2.png" width="100px"alt="">
-        </div>
-        <div style="width: 33%;">
-            <img src="https://bbits.solutions/cwp_api/uploads/icons/3.png" width="100px"alt="">
-            <h3 style="color:#0F296E"><%= endDate %></h3>
-            <h3 style="color:#0F296E; font-size:28px"><%= endTime %></h3>
-        </div>
-        </div>
-        <hr style="height: 1px;border: none;color: #c2c2c2;background-color: #bbb8b8;"/>
-        <div style="display:flex; align-items:center; padding:5px" >
-            <img src="https://bbits.solutions/cwp_api/uploads/icons/5.png" height="50px"></img>
-            <p style="color: #323030; margin: auto; margin-left: 0;"><%= zone %>, <%= city %></p>
-        </div>
-        <hr style="height: 1px;border: none;color: #c2c2c2;background-color: #bbb8b8;"/>
-        <div style="display:flex; align-items:center; padding:5px">
-            <img src="https://bbits.solutions/cwp_api/uploads/icons/6.png" height="50px"></img>
-            <p style="color: #323030;margin: auto; margin-left: 0;"><%= plate %></p>
-        </div>
-        <hr style="height: 1px;border: none;color: #c2c2c2;background-color: #bbb8b8;"/>
-        <div style="display:flex; place-items: center; padding:5px">
-            <img src="https://bbits.solutions/cwp_api/uploads/icons/7.png" height="50px"></img>
-            <p style="color: #323030;margin: auto; margin-left: 0;"><%= rate %></p>
-        </div>
-        <hr style="height: 1px;border: none;color: #c2c2c2;background-color: #bbb8b8;"/>
-        <div style="display:flex; align-items:center; padding:5px">
-            <div style="width: 50%; display: flex;">
-                <img src="https://bbits.solutions/cwp_api/uploads/icons/8.png" height="50px">
-                <h3 style="color:#0F296E; font-size:22px; margin: auto; margin-left: 0;">Service Fee</h3>
-            </div>
-            <div style="width: 50%; text-align: end; margin: auto;">
-                <h3 style="color:#0F296E;font-size:22px;"><%= service_fee %> $</h3>
-            </div>
-        </div>
-        <hr style="height: 1px;border: none;color: #c2c2c2;background-color: #bbb8b8;"/>
-        <div style="width: 100%; display:flex; margin-top: 13px;">
-            <div style="width: 50%; display: flex;">
-                <img src="https://bbits.solutions/cwp_api/uploads/icons/9.png" height="50px">
-                <h3 style="color:#0F296E; font-size:22px; margin: auto; margin-left: 0;">Amount Paid</h3>
-            </div>
-            <div style="width: 50%; text-align: end; margin: auto;">
-                <h3 style="color:#0F296E;font-size:22px;"><%= amount %> $</h3>
-            </div>
-        </div>
-    </div>
-    <img src="https://bbits.solutions/cwp_api/uploads/icons/12.png" style="width: 100%">
-</section>
+<body style="margin: 0; padding: 0; background: #eee; font-family: Helvetica, Arial, sans-serif; color: black;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: #eee;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background: white;">
+          <tr>
+            <td>
 
+              <!-- Header -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: <%= color %>; color: white;">
+                <tr>
+                  <td style="padding: 10px;">
+                    <a href="<%= path %>" style="color: white; text-decoration: none;" target="_blank"><%= COMPANY_NAME %></a>
+                  </td>
+                  <td align="right" style="padding: 10px;">
+                    Questions? Email Us: <a href="mailto:<%= sendingEmail %>" style="color: white; text-decoration: none;"><%= sendingEmail %></a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Logo & Title -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="left" style="padding: 20px;">
+                    <img src="<%= API_URL %>/<%= logo %>" width="120" alt="<%= COMPANY_NAME %> Logo" style="display: block;">
+                  </td>
+                  <td align="right" style="padding: 20px;">
+                    <h2 style="color:<%= color %>; font-size:24px; margin:0;">PARKING RECEIPT</h2>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Parking ID -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ccc; padding:0 15px;">
+                <tr>
+                  <td style="padding: 10px; font-size:16px; color:<%= color %>;">
+                    <strong>PARKING ID</strong>
+                  </td>
+                  <td align="right" style="padding: 10px; font-size:16px; color:<%= color %>;">
+                    <%= parking_id %>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Dates & Times -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="text-align:center; padding:15px 0;">
+                <tr>
+                  <td width="33%">
+                    <img src="https://cdn-icons-png.flaticon.com/512/747/747310.png" width="60" alt="Start Date">
+                    <div style="color:#333;"><%= startDate %></div>
+                    <div style="color:#333; font-size:20px;"><%= startTime %></div>
+                  </td>
+                  <td width="34%">
+                    <img src="https://cdn-icons-png.flaticon.com/512/271/271228.png" width="40" alt="Arrow">
+                  </td>
+                  <td width="33%">
+                    <img src="https://cdn-icons-png.flaticon.com/512/747/747310.png" width="60" alt="End Date">
+                    <div style="color:#333;"><%= endDate %></div>
+                    <div style="color:#333; font-size:20px;"><%= endTime %></div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Zone / City -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ccc;">
+                <tr>
+                  <td style="padding: 10px; font-size:14px; color:#333;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/535/535239.png" height="30" style="vertical-align: middle;">
+                    <%= zone %>, <%= city %>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Plate -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ccc;">
+                <tr>
+                  <td style="padding: 10px; font-size:14px; color:#333;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/290/290081.png" height="30" style="vertical-align: middle;">
+                    <%= plate %>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Rate -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ccc;">
+                <tr>
+                  <td style="padding: 10px; font-size:14px; color:#333;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/9742/9742126.png" height="30" style="vertical-align: middle;">
+                    <%= rate %>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Service Fee -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ccc;">
+                <tr>
+                  <td style="padding: 10px; font-size:14px; color:#333;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/992/992651.png" height="30" style="vertical-align: middle;">
+                    Service Fee
+                  </td>
+                  <td align="right" style="padding: 10px; font-size:14px; color:#333;">
+                    <%= service_fee %> $
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Amount Paid -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ccc; border-bottom:1px solid #ccc;">
+                <tr>
+                  <td style="padding: 10px; font-size:16px; color:<%= color %>;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png" height="30" style="vertical-align: middle;">
+                    <strong>Amount Paid</strong>
+                  </td>
+                  <td align="right" style="padding: 10px; font-size:16px; color:<%= color %>;">
+                    <%= amount %> $
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Footer -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:<%= color %>;">
+                <tr>
+                  <td align="center" style="padding: 16px; color: #f0f2f5; font-size: 13px;">
+                    &copy; <%= new Date().getFullYear() %> <%= COMPANY_NAME %>. All Rights Reserved.
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>

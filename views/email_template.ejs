@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width">
+</head>
+
+<body style="margin: 0; padding: 0; background: #eee; font-family: Helvetica, Arial, sans-serif; color: black;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: #eee;">
+    <tr>
+      <td align="center">
+        <table width="75%" cellpadding="0" cellspacing="0" style="background: white;">
+          <tr>
+            <td>
+
+              <!-- Header -->
+              <table width="100%" style="background-color: <%= color %>; color: white;">
+                <tr>
+                  <td style="padding: 10px;">
+                    <a href="<%= path %>/" style="color: white; text-decoration: none;" target="_blank"><%= COMPANY_NAME %></a>
+                    |
+                    <a href="<%= path %>/admin/profile" style="color: white; text-decoration: none;" target="_blank">My Account</a>
+                  </td>
+                  <td align="right" style="padding: 10px;">
+                    Questions? Email Us: <a href="mailto:<%= sendingEmail %>" style="color: white; text-decoration: none;"><%= sendingEmail %></a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Logo -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding: 20px 0;">
+                    <a href="<%= path %>" target="_blank">
+                      <img src="<%= API_URL %>/<%= logo %>" width="100" alt="Logo" style="display: block;">
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Content -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #ccc; border-bottom: 1px solid #ccc;">
+                <tr>
+                  <td style="padding: 15px; font-size: 15px;">
+                    <%- content %>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Spacer -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td height="16" style="font-size: 16px; line-height: 16px;">&nbsp;</td></tr>
+              </table>
+
+              <!-- Footer -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: <%= color %>;">
+                <tr>
+                  <td align="center" style="padding: 16px; color: #f0f2f5; font-size: 13px;">
+                    &copy; <%= new Date().getFullYear() %> <%= COMPANY_NAME %>. All Rights Reserved.
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

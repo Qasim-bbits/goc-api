@@ -36,6 +36,12 @@ const Parkings = mongoose.model(
             required : false,
             minlength : 0
         },
+        added_by : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Users',
+            required : false,
+            minlength : 0
+        },
         zone : {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Zones',
@@ -68,6 +74,16 @@ const Parkings = mongoose.model(
             required : false,
             minlength : 0
         },
+        plate_two : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        plate_three : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
         from : {
             type : Date,
             required : false,
@@ -82,7 +98,26 @@ const Parkings = mongoose.model(
             type : Number,
             required : false,
             minlength : 0
-        }
+        },
+        no_of_times_plate_edited : {
+            type : Number,
+            default: 0
+        },
+        operation_id: {
+            type: String,
+            required: false,
+            minlength: 0
+        },
+        email : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        transaction_date: {
+            type: Date,
+            required: false,
+            minlength: 0
+        },
     })
 )
 exports.Parkings = Parkings;

@@ -5,8 +5,8 @@ var Routes = require('./routes/routes.js');
 require('./config')();
 
 var app = express();
-app.use(bodyparser.json());
-app.use(bodyparser.urlencoded({extended: true}) );
+app.use(bodyparser.json({ limit: '50mb' }));
+app.use(bodyparser.urlencoded({limit: '50mb', extended: true}) );
 app.use('/uploads', express.static('uploads'))
 // app.use('/uploads/logo', express.static(__dirname + '/uploads/logo'));
 app.set("view engine", "ejs");
@@ -21,7 +21,7 @@ app.all("/*", function(req, res, next){
   res.header('Access-Control-Allow-Credentials', true);
   next();
 });
-app.use('/', Routes);
+app.use('/api', Routes);
 app.get('/test', function(req, res){
   res.render('contact_us',{email:'data.email',password:'data.password'});
 });

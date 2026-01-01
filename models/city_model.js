@@ -8,6 +8,11 @@ const Cities = mongoose.model(
             required : false,
             minlength : 0
         },
+        time_zone : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
         polygon : {
             type : Array,
             required : false,

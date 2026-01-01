@@ -7,10 +7,12 @@ const { Zones } = require('../models/zone_model');
 const { TenentPlates } = require('../models/tenent_plate_model');
 
 const moment = require('moment-timezone');
+const { BusinessPassPlates } = require('../models/business_pass_plate_model');
 moment.tz.setDefault("America/New_York");
 // moment.tz.setDefault("Asia/Karachi");
 
 module.exports.getRateById = async function (req, res){
+    const isExtensionAllowed = await Zones.findOne({_id: req.body.id, enable_extension: true}).select('-__v');
     const parkings = await Parkings.find({
         $and: [
           {
@@ -28,12 +30,14 @@ module.exports.getRateById = async function (req, res){
           }
         ]
       })
-    if(parkings.length == 0){
+
+    if(parkings.length == 0 || (parkings.length > 0 && isExtensionAllowed)){
         const checkTenantZone = await Zones.findOne({_id : req.body.id, tenant_zone: true}).select('-__v');
+        const checkBusinessZone = await Zones.findOne({_id : req.body.id, is_business_pass: true}).select('-__v');
         if(checkTenantZone){
             const checkPlateExist = await TenentPlates.findOne({plate : req.body.plate, zone: req.body.id}).select('-__v');
             if(checkPlateExist){
-                const rates = await Rates.find({zone_id : req.body.id, qr_code: false}).select('-__v');
+                const rates = await Rates.find({zone_id : req.body.id, qr_code: false}).sort({rate_name: 1}).select('-__v');
                 res.send(rates);
             }else{
                 res.send({
@@ -41,8 +45,44 @@ module.exports.getRateById = async function (req, res){
                     msg: 'You are not allowed to park here'
                 });
             }
+        }else if(checkBusinessZone){
+            const checkPlateExist = await BusinessPassPlates.findOne({plate : req.body.plate, zone: req.body.id}).select('-__v');
+            if(checkPlateExist){
+                const parkings = await Parkings.find({
+                    $and: [
+                      {
+                        from: {
+                          $lte: new Date()
+                        }
+                      },
+                      {
+                        to: {
+                          $gte: new Date()
+                        }
+                      },
+                      {
+                        zone: req.body.id
+                      }
+                    ]
+                });
+                if(parkings.length >= checkBusinessZone.no_of_business_pass){
+                    res.send({
+                        success: false,
+                        msg: 'No Business Pass available at the moment'
+                    });
+                }else{
+                    const rates = await Rates.find({zone_id : req.body.id, qr_code: false}).sort({rate_name: 1}).select('-__v');
+                    res.send(rates);
+
+                }
+            }else{
+                res.send({
+                    success: false,
+                    msg: 'plate_not_register_as_employee'
+                });
+            }
         }else{
-            const rates = await Rates.find({zone_id : req.body.id, qr_code: false}).select('-__v');
+            const rates = await Rates.find({zone_id : req.body.id, qr_code: false}).sort({rate_name: 1}).select('-__v');
             res.send(rates);
         }
     }else{
@@ -147,6 +187,11 @@ module.exports.getQRRateById = async function (req, res){
 
 module.exports.getRates = async function (req, res){
     const rates = await Rates.find().select('-__v');
+    res.send(rates);
+}
+
+module.exports.getVisitorPassRate = async function (req, res){
+    const rates = await Rates.find({is_visitor_pass: true, zone_id: req.params.zone_id}).select('-__v');
     res.send(rates);
 }
 
@@ -263,48 +308,88 @@ module.exports.addRateStep = function(req,res){
     res.send(rateStep);
 }
 
+
 module.exports.getRateSteps = async function(req,res){
+    const checkTenantRate = await Rates.findOne({_id : req.body.id, is_whitelist: true}).select('-__v');
+    if(checkTenantRate){
+        const checkPlateExist = await TenentPlates.findOne({plate : req.body.plate, rate: req.body.id}).select('-__v');
+        if(!checkPlateExist){
+            res.send({success : false, msg:"You are not allowed to park here"});
+            return;
+        }
+    }
+    if(req.body.time_zone){
+        moment.tz.setDefault(req.body.time_zone);
+    }else{
+        moment.tz.setDefault("America/New_York");
+    }
     var current_time = moment().format();
+    var start_parking_time = moment().format();
+    let parkingId;
+    const isExtensionAllowed = await Zones.findOne({_id: req.body.zone, enable_extension: true}).select('-__v');
+    if(isExtensionAllowed){
+        const parkings = await Parkings.findOne({
+            $and: [
+              {
+                from: {
+                  $lte: new Date()
+                }
+              },
+              {
+                to: {
+                  $gte: new Date()
+                }
+              },
+              {
+                rate: req.body.id
+              },
+              {
+                plate: req.body.plate
+              }
+            ]
+          })
+          if(parkings && parkings.to){
+            current_time = moment(parkings.to).format();
+            start_parking_time = moment(parkings.to).format();
+            parkingId = parkings._id;
+          }
+    }
     var now = moment(current_time).format("L");
     const org = await Organizations.findOne({_id: req.body.org}).select('-__v');
+    const nowUtc = moment.utc().toDate();
     let rates = await RateTypes.find({
         $and: [
-            {start_date: {$lte: new Date()}},
-            {end_date: {$gte: new Date()}},
+            {start_date: {$lte: nowUtc}},
+            {end_date: {$gte: nowUtc}},
             {special_rate : true},
             {rate_id : req.body.id}
         ]}).select('-__v');
     if(rates.length == 0){
         rates= await RateTypes.find({rate_id : req.body.id, special_rate : false}).select('-__v');
     }
-// console.log(current_time, now, 'before');
-    let rateSteps = await generateStep(rates, current_time, now, req.body.plate, org);
-    // let mergeSteps = await [...rateSteps];
-    current_time = moment(rateSteps[rateSteps.length - 1].time_desc, 'MMMM Do YYYY, hh:mm a').format();
-    now = moment(current_time).format("L");
-    console.log(rates,'rates');
-    // console.log(rateSteps[rateSteps.length - 1],'after');
+console.log(current_time, now, 'before');
+    let rateSteps = await generateStep(rates, current_time, now, req.body.plate, org, start_parking_time, parkingId);
     let mergeSteps = await [...rateSteps];
-    if(rateSteps[rateSteps.length - 1].time < 1440){
-        let nextStep = await generateStep(rates, current_time, now, req.body.plate, org);
-        if(rateSteps.length > 0 && nextStep.length > 0){
-            nextStep.map(x=>{
-                x.total = rateSteps[rateSteps.length-1].total + x.rate;
-                x.rate = rateSteps[rateSteps.length-1].rate + x.rate
-            })
-        }
-        mergeSteps = await [...rateSteps, ...nextStep];
-    }
-    // current_time = moment().format();
-    // now = moment(current_time).format("L");
     if(mergeSteps.length > 0){
+        current_time = moment(rateSteps[rateSteps.length - 1].time_desc, 'MMMM Do YYYY, hh:mm a').format();
+        now = moment(current_time).format("L");
+        if(rateSteps[rateSteps.length - 1].time < 1440){
+            let nextStep = await generateStep(rates, current_time, now, req.body.plate, org, start_parking_time, parkingId);
+            if(rateSteps.length > 0 && nextStep.length > 0){
+                nextStep.map(x=>{
+                    x.total = rateSteps[rateSteps.length-1].total + x.rate;
+                    x.rate = rateSteps[rateSteps.length-1].rate + x.rate
+                })
+            }
+            mergeSteps = await [...rateSteps, ...nextStep];
+        }
         res.send(mergeSteps)
     }else{
         res.send({success : false, msg:"Parking not allowed during these hours"})
     }
 }
 
-const generateStep = async(rates, current_time, now, plate, org)=>{
+const generateStep = async(rates, current_time, now, plate, org, start_parking_time, parkingId)=>{
     let steps = [];
     let added_date;
     let purchasedFree = false;
@@ -330,9 +415,9 @@ const generateStep = async(rates, current_time, now, plate, org)=>{
             }
         ]
     })
-    if(parkings.length > 0){
-        purchasedFree = true
-    }
+    // if(parkings.length > 0){
+    //     purchasedFree = true
+    // }
     await Promise.all(rates.map(async(x)=>{
         let start_time = moment(now +" "+ x.start_time, "L HH:mm").format();
         let end_time = moment(now +" "+ x.end_time, "L HH:mm").format();
@@ -354,8 +439,7 @@ const generateStep = async(rates, current_time, now, plate, org)=>{
             const rateStep = await RateSteps.find({rate_type_id : x._id}).select('-__v');
             await Promise.all(rateStep.map(async (y)=>{
                 added_date = moment(current_time).add(y.time, 'minutes').format('MMMM Do YYYY, hh:mm a');
-                console.log(x)
-                if(rateStep[rateStep.length - 1].time >= 1440 && x.flat_rate){
+                if(x.flat_rate){
                     end_time = moment(current_time).add(y.time, 'minutes').format()
                 }
                 let last_step = moment(current_time).add(y.time, 'minutes').format() >= moment(end_time).format();
@@ -369,9 +453,11 @@ const generateStep = async(rates, current_time, now, plate, org)=>{
                     time_desc: added_date,
                     time_diff: showDiff(added_date),
                     day: calculateDay(moment(added_date, 'MMMM Do YYYY, hh:mm a' ).format()),
+                    day_fr: calculateDayFrench(moment(added_date, 'MMMM Do YYYY, hh:mm a' ).format()),
                     service_fee: service_fee,
                     total: (y.rate + service_fee),
-                    current_time: moment().format('MMMM Do YYYY, hh:mm a')
+                    current_time: moment(start_parking_time).format('MMMM Do YYYY, hh:mm a'),
+                    parking: parkingId
                 }
                 if(!time_reached){
                     if(purchasedFree == true){
@@ -431,6 +517,21 @@ const showDiff = (added_date)=>{
       });
   }
 
+  const calculateDayFrench = (added_date)=>{
+    
+    var fromNow = moment(added_date ).fromNow();    
+      return moment(added_date).locale('fr').calendar( null, {
+        lastWeek: '[Dernier] dddd',     // e.g. 'Dernier vendredi'
+        lastDay:  '[Hier]',             // 'Hier'
+        sameDay:  '[Aujourd’hui]',      // 'Aujourd’hui'
+        nextDay:  '[Demain]',           // 'Demain'
+        nextWeek: 'dddd',             // e.g. 'Vendredi prochain'            
+          sameElse: function () {
+              return "[" + fromNow + "]";
+          }
+      });
+  }
+
   module.exports.getRateDetail = async function (req, res){
     const rates = await Rates.find({zone_id: req.body.zone_id}).sort( { "rate_name": 1 } ).select('-__v');
     let rateDetail = [];
@@ -441,6 +542,7 @@ const showDiff = (added_date)=>{
             rateSteps = await RateSteps.find({rate_type_id: x._id}).select('-__v');
             let obj = {
                 rate_name : el.rate_name,
+                enable_custom_rate: el.enable_custom_rate,
                 rate_id : el._id,
                 Monday : x.Monday,
                 Tuesday : x.Tuesday,
@@ -577,5 +679,10 @@ module.exports.addSpecialRate = async function (req, res){
  
 module.exports.getRateByZone = async function (req, res){
     const rates = await Rates.find({zone_id : req.body.id, qr_code: false}).select('-__v');
+    res.send(rates);
+}
+
+module.exports.getWhitelistRateByZone = async function (req, res){
+    const rates = await Rates.find({zone_id : req.body.zone_id, is_whitelist: true}).select('-__v');
     res.send(rates);
 }

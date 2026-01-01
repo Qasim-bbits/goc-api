@@ -2,9 +2,9 @@ const encrypt_helper = require("./encrypt_helper");
 
 
 module.exports.authorization = (req, res, next) => {
-    const token = req.cookies.access_token;
+    const token = req.headers.authorization;
     if (!token) {
-      return res.send({status: 403, msg: 'Unauthorized, Please login again'});
+      return res.status(401).send({status: 401, msg: 'Unauthorized, Please login again'});
     }
     try {
         const data = encrypt_helper.jwt_decode(token);
@@ -13,9 +13,9 @@ module.exports.authorization = (req, res, next) => {
             req.userRole = data.role;
             return next();
         }else{
-            return res.send({status: 403, msg: 'Unauthorized, Please login again'});
+            return res.status(401).send({status: 401, msg: 'Unauthorized, Please login again'});
         }
     } catch {
-        return res.send({status: 403, msg: 'Unauthorized, Please login again'});
+        return res.status(401).send({status: 401, msg: 'Unauthorized, Please login again'});
     }
   };
