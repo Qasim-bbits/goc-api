@@ -26,6 +26,14 @@ const Rates = mongoose.model(
             type : Boolean,
             default : false,
         },
+        max_custom_rate_in_minutes: {
+            type : Number,
+            default : false,
+        },
+        custom_rate_type: {
+            type : String,
+            default : false,
+        },
         qr_code : {
             type : Boolean,
             required : false,

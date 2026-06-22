@@ -8,10 +8,28 @@ const { TenentPlates } = require('../models/tenent_plate_model');
 
 const moment = require('moment-timezone');
 const { BusinessPassPlates } = require('../models/business_pass_plate_model');
+const { BlackListedPlates } = require('../models/black_listed_plate_model');
+const { PlateParkingLimits } = require('../models/plate_parking_limit_model');
 moment.tz.setDefault("America/New_York");
 // moment.tz.setDefault("Asia/Karachi");
 
 module.exports.getRateById = async function (req, res){
+    const isBlackLlisted = await BlackListedPlates.findOne({plate: req.body.plate}).select('-__v');
+    if (
+        isBlackLlisted &&
+        (
+            isBlackLlisted.blacklist_scope === 'overAll' ||
+            (
+                isBlackLlisted.blacklist_scope === 'zone' &&
+                String(isBlackLlisted.zone) === String(req.body.id)
+            )
+        )
+    ) {
+        return res.send({
+            success: false,
+            msg: isBlackLlisted.message
+        });
+    }
     const isExtensionAllowed = await Zones.findOne({_id: req.body.id, enable_extension: true}).select('-__v');
     const parkings = await Parkings.find({
         $and: [
@@ -310,6 +328,37 @@ module.exports.addRateStep = function(req,res){
 
 
 module.exports.getRateSteps = async function(req,res){
+    const customRate = await Rates.findOne({_id : req.body.id, enable_custom_rate: true, max_custom_rate_in_minutes: {$gte: 0}}).select('-__v');
+    let minutesLeft = 0;
+    if(customRate){
+        let startParkingLimitDate = moment().startOf(customRate.custom_rate_type).format();
+        let endParkingLimitDate = moment().endOf(customRate.custom_rate_type).format();
+        let parkings = await Parkings.find({
+            $and: [
+                {plate: req.body.plate},
+                // {rate: req.body.id},
+                {
+                    from: {
+                        $gte: startParkingLimitDate,
+                        $lt: endParkingLimitDate
+                    }
+                }
+            ]
+        }).select('-__v');
+        const totalMinutes = parkings.reduce((total, item) => {
+            return total + (
+                (new Date(item.to).getTime() - new Date(item.from).getTime()) / (1000 * 60)
+            );
+            }, 0);
+        const isResetLimit = await PlateParkingLimits.findOne({org: req.body.org, plate: req.body.plate}).select('-__v');
+        minutesLeft = (isResetLimit ? isResetLimit.no_of_minutes_per_plate : customRate.max_custom_rate_in_minutes) - totalMinutes;
+        if(minutesLeft <= 0){
+            return res.send({
+                success: false,
+                msg: `Parking limit exceeded, you cannot park in this zone`,
+            });
+        }
+    }
     const checkTenantRate = await Rates.findOne({_id : req.body.id, is_whitelist: true}).select('-__v');
     if(checkTenantRate){
         const checkPlateExist = await TenentPlates.findOne({plate : req.body.plate, rate: req.body.id}).select('-__v');
@@ -367,7 +416,6 @@ module.exports.getRateSteps = async function(req,res){
     if(rates.length == 0){
         rates= await RateTypes.find({rate_id : req.body.id, special_rate : false}).select('-__v');
     }
-console.log(current_time, now, 'before');
     let rateSteps = await generateStep(rates, current_time, now, req.body.plate, org, start_parking_time, parkingId);
     let mergeSteps = await [...rateSteps];
     if(mergeSteps.length > 0){
@@ -378,12 +426,15 @@ console.log(current_time, now, 'before');
             if(rateSteps.length > 0 && nextStep.length > 0){
                 nextStep.map(x=>{
                     x.total = rateSteps[rateSteps.length-1].total + x.rate;
-                    x.rate = rateSteps[rateSteps.length-1].rate + x.rate
+                    x.rate = rateSteps[rateSteps.length-1].rate + x.rate;
                 })
             }
             mergeSteps = await [...rateSteps, ...nextStep];
         }
-        res.send(mergeSteps)
+        res.send(mergeSteps.map(item => ({
+            ...item,
+            minutesLeft: minutesLeft
+        })))
     }else{
         res.send({success : false, msg:"Parking not allowed during these hours"})
     }
@@ -432,8 +483,6 @@ const generateStep = async(rates, current_time, now, plate, org, start_parking_t
         const condition1 = moment(current_time) >= moment(start_time);
         const condition2 = moment(current_time) < moment(end_time);
         const condition3 = x[day_now] == true;
-        console.log(condition1,condition2,condition3)
-        console.log(current_time,start_time,end_time)
         if(condition1 && condition2 && condition3){
             let time_reached = false;
             const rateStep = await RateSteps.find({rate_type_id : x._id}).select('-__v');
@@ -543,6 +592,8 @@ const showDiff = (added_date)=>{
             let obj = {
                 rate_name : el.rate_name,
                 enable_custom_rate: el.enable_custom_rate,
+                max_custom_rate_in_minutes: el.max_custom_rate_in_minutes,
+                custom_rate_type: el.custom_rate_type,
                 rate_id : el._id,
                 Monday : x.Monday,
                 Tuesday : x.Tuesday,
@@ -569,7 +620,12 @@ const showDiff = (added_date)=>{
 }
 
 module.exports.bulkEditSteps = async function (req, res){
-    Rates.findByIdAndUpdate(req.body.rate_id, {rate_name: req.body.rate_name}, {new: true})
+    Rates.findByIdAndUpdate(req.body.rate_id, {
+        rate_name: req.body.rate_name,
+        custom_rate_type: req.body.custom_rate_type,
+        max_custom_rate_in_minutes: req.body.max_custom_rate_in_minutes,
+        enable_custom_rate: req.body.enable_custom_rate
+    }, {new: true})
     .then(response => {
         if(!response) {
             return res.status(404).json({

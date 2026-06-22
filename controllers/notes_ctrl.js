@@ -1,6 +1,47 @@
 const { Notes } = require('../models/notes_model');
 const { Users } = require('../models/users_model');
 var mongoose = require('mongoose');
+var email_helper = require('../helpers/email_helper');
+const CronJob = require('cron').CronJob;
+
+let running = false;
+let failureCount = 0;
+
+const job = new CronJob('*/30 * * * * *', async function(){
+    if (running) return;
+    running = true;
+
+    // await isParkAppLive();
+
+    running = false;
+})
+job.start();
+
+const isParkAppLive = async() => {
+    try {
+        const axios = require('axios');
+        const response = await axios.post('https://parkapp.ca/api/getOrgBySubDomain', { role: 'root' }, { timeout: 5000 });
+        console.log(failureCount)
+        if (response.status < 200 || response.status >= 300) {
+            throw new Error(`Bad status: ${response.status}`);
+        }
+        failureCount = 0;
+
+        return { status: response.status };
+    } catch (error) {
+        failureCount++;
+        console.log(failureCount, error.message)
+        let emails = [
+            'qasim@bbits.solutions',
+            // 'hassan@bbits.solutions',
+            // 'dev@bbits.solutions'
+        ]
+        if (failureCount >= 3) {
+            await email_helper.send_raw_email('Parkapp is Down', emails, `Parkapp is not working, ${failureCount} times, error: ${error?.message}`);
+        }
+        return ({ status: 'API is not working' });
+    }
+}
 
 module.exports.getNotes = async function (req, res){
     let body = {}
@@ -46,4 +87,8 @@ module.exports.getNotesByOrg = async function (req, res){
 module.exports.getNotesByType = async function (req, res){
     const notes = await Notes.find({type: req.body.type, org: req.body.org_id}).populate('org').sort({ "note": 1 }).select('-__v');
     res.send(notes);
+}
+
+module.exports.checkParkAPP = async function (req, res) {
+   res.send(await isParkAppLive());
 }

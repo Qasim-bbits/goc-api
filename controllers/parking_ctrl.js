@@ -26,12 +26,20 @@ const CronJob = require('cron').CronJob;
 
 const job = new CronJob('0 0 * * *', function(){
   // renewParking();
-  renewBusinessParking();
+  // renewBusinessParking();
 })
 
 job.start();
 
 module.exports.buyParking = async function(req,res){
+  const from = moment(req.body.from,'MMMM Do YYYY, hh:mm a');
+  const to = moment(req.body.to,'MMMM Do YYYY, hh:mm a');
+  if (from.isAfter(to)) {
+    return res.send({
+      success: false,
+      message: 'Start time must be before end time.',
+    });
+  }
   let parkingsLeft;
     const city = await Cities.findOne({_id: req.body.city}).select('-__v');
     if(city.time_zone){
@@ -42,7 +50,7 @@ module.exports.buyParking = async function(req,res){
     }
     req.body.plate = req.body.plate.replace(/\s+/g, '');
 
-    const parking_limit_zone = await Zones.findOne({_id: req.body.zone, enable_parking_limit: true}).select('-__v');
+    const parking_limit_zone = await Organizations.findOne({_id: req.body.org, enable_parking_limit: true}).select('-__v');
     if(parking_limit_zone?.enable_parking_limit == true){
       let startParkingLimitDate = moment().startOf('year').format();
       let endParkingLimitDate = moment().endOf('year').format();
@@ -73,7 +81,7 @@ module.exports.buyParking = async function(req,res){
       }).select('-__v');
 
       let parkingLimit = parking_limit_zone.no_of_parking_per_plate;
-      const isResetLimit = await PlateParkingLimits.findOne({zone: req.body.zone, plate: req.body.plate}).select('-__v');
+      const isResetLimit = await PlateParkingLimits.findOne({org: req.body.org, plate: req.body.plate}).select('-__v');
       
       if(isResetLimit != null){
         parkingLimit = isResetLimit.no_of_parking_per_plate;
@@ -739,23 +747,47 @@ module.exports.renewTenantParking = async function (req, res){
 }
 
 const renewParking = async() => {
-  const plates = await TenentPlates.find().select('plate');
+  // const expiredParkings = await Parkings.find({zone: '682cd720bf0ceef43b4dfd82', to: {$gte: moment().add(4,"days").format()}});
+  // console.log(expiredParkings.map(x => x._id));
+  // // return expiredParkings;
+  // if(expiredParkings.length > 0){
+  //   Parkings.updateMany(
+  //   {_id: { $in: expiredParkings.map(x => x._id) }},
+  //   {"$set":{to: moment().subtract(1,"days").format()}})
+  //   .then(response => {
+  //     console.log(response)
+  //     return response;
+  //   })
+  // }
+
+  const plates = await TenentPlates.find({ zone: '6825321ebf0ceef43b4d9a88'}).select('plate');
   var allPlates = await plates.map(function (obj) {
     return obj.plate;
   });
-  const expiredParkings = await Parkings.find({plate: { $in: allPlates }, to: {$lte: new Date()}}).select('plate');
-  if(expiredParkings.length > 0){
-    var expiredPlates = expiredParkings.map(function (obj) {
-      return obj.plate;
-    });
-    Parkings.updateMany(
-    {plate: { $in: expiredPlates }},
+  // const parkings = await Parkings.find({plate: { $in: allPlates }, zone: '6825321ebf0ceef43b4d9a88'}).select('plate');
+  // console.log(parkings.length)
+  // console.log(plates.length)
+  // return plates
+  // const expiredParkings = await Parkings.find({plate: { $in: allPlates }, to: {$lte: new Date()}}).select('plate');
+  // if(expiredParkings.length > 0){
+  //   var expiredPlates = expiredParkings.map(function (obj) {
+  //     return obj.plate;
+  //   });
+  //   Parkings.updateMany(
+  //   {plate: { $in: expiredPlates }},
+  //   {"$set":{from: moment().format(), to: moment().add(1,"months").format()}})
+  //   .then(response => {
+  //     console.log(response)
+  //     return response;
+  //   })
+  // }
+  Parkings.updateMany(
+    {plate: { $in: allPlates }, zone: '6825321ebf0ceef43b4d9a88'},
     {"$set":{from: moment().format(), to: moment().add(1,"months").format()}})
     .then(response => {
       console.log(response)
       return response;
     })
-  }
 }
 
 module.exports.residantParking = async function (req, res){
@@ -978,34 +1010,40 @@ module.exports.testExternalParking = async function (req, res) {
     "ah": ""
   }
   ipark_in.ah = calculateHash.ah(ipark_in)
-  console.log(ipark_in, 'ipark_in');
   const body = "jsonIn=" + JSON.stringify({ ipark_in: ipark_in });
+  console.log(body)
   let header = {
     'Authorization': 'Basic ' + Buffer.from('integraTariffs:vuf`spnZlX').toString('base64'),
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
   }
-  const axios = require("axios");
-  axios.post('https://ws-iparksuite.iparkme.com/TariffComputer.WS/TariffComputer.asmx/InsertExternalParkingOperationInstallationTimeJSON',
-    body,
-    { headers: header })
-    .then(function (response) {
-      let jsonResult;
-      parseString(response.data, function (err, res) {
-        jsonResult = JSON.parse(res.string._)
-      });
-      console.log(jsonResult)
-      if (jsonResult.ipark_out.r == 1) {
-        res.send(jsonResult)
-      } else {
-        res.json({
-          message: 'System error. Contact Support',
-          status: 'error',
+  try{
+    const axios = require("axios");
+    axios.post('https://ws-iparksuite.iparkme.com/TariffComputer.WS/TariffComputer.asmx/InsertExternalParkingOperationInstallationTimeJSON',
+    // axios.post('https://ws-iparksuite.blinkay.app:444/TariffComputer.WS/TariffComputer.asmx/InsertExternalParkingOperationInstallationTimeJSON',
+      body,
+      { headers: header })
+      .then(function (response) {
+        let jsonResult;
+        parseString(response.data, function (err, res) {
+          jsonResult = JSON.parse(res.string._)
         });
-      }
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
+        console.log(jsonResult)
+        if (jsonResult.ipark_out.r == 1) {
+          res.send(jsonResult)
+        } else {
+          res.json({
+            message: 'System error. Contact Support',
+            status: 'error',
+          });
+        }
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+    }catch(e){
+      console.log(e)
+      res.send(e)
+    }
 }
 
 module.exports.editParkingPlate = async function (req, res) {
@@ -1126,7 +1164,7 @@ module.exports.parking_available = async function (req, res) {
   }
   req.body.plate = req.body.plate.replace(/\s+/g, '');
 
-  const parking_limit_zone = await Zones.findOne({ _id: req.body.zone, enable_parking_limit: true }).select('-__v');
+  const parking_limit_zone = await Organizations.findOne({ _id: req.body.org, enable_parking_limit: true }).select('-__v');
   if (parking_limit_zone?.enable_parking_limit == true) {
     let startParkingLimitDate = moment().startOf('year').format();
     let endParkingLimitDate = moment().endOf('year').format();
@@ -1157,7 +1195,7 @@ module.exports.parking_available = async function (req, res) {
     }).select('-__v');
 
     let parkingLimit = parking_limit_zone.no_of_parking_per_plate;
-    const isResetLimit = await PlateParkingLimits.findOne({ zone: req.body.zone, plate: req.body.plate }).select('-__v');
+    const isResetLimit = await PlateParkingLimits.findOne({ org: req.body.org, plate: req.body.plate }).select('-__v');
 
     if (isResetLimit != null) {
       parkingLimit = isResetLimit.no_of_parking_per_plate;
@@ -1235,11 +1273,11 @@ module.exports.park_vehicle = async function (req, res) {
   } else {
     const parkings = new Parkings(req.body);
     parkings.save();
-    const parking_limit_zone = await Zones.findOne({ _id: req.body.zone, enable_parking_limit: true }).select('-__v');
+    const parking_limit_zone = await Organizations.findOne({ _id: req.body.org, enable_parking_limit: true }).select('-__v');
     let newParking = { ...parkings._doc };
     if (parking_limit_zone && parking_limit_zone.enable_parking_limit) {
       let parkingLimit = parking_limit_zone.no_of_parking_per_plate;
-      const isResetLimit = await PlateParkingLimits.findOne({ zone: req.body.zone, plate: req.body.plate }).select('-__v');
+      const isResetLimit = await PlateParkingLimits.findOne({ org: req.body.org, plate: req.body.plate }).select('-__v');
 
       if (isResetLimit != null) {
         parkingLimit = isResetLimit.no_of_parking_per_plate;
@@ -1248,4 +1286,23 @@ module.exports.park_vehicle = async function (req, res) {
     }
     externalParking(req.body, newParking, res);
   }
+}
+
+module.exports.liveAPI = async function (req, res) {
+  let parkings = await Parkings.find({
+    org: '6903eb7130af2de717910ce8',
+    $expr: {
+      $lt: ["$to", "$from"]
+    },
+    amount: { $gt: 0 },
+    from: { $gte: new Date('2026-02-10T23:14:00.000Z') }
+  })
+  const ops = parkings.map(item => ({
+      updateOne: {
+        filter: { _id: item._id },
+        update: { $set: {to: moment(item.from).add(1,'days').format()} },
+      }
+    }));
+    // await Parkings.bulkWrite(ops);
+  res.send(parkings);
 }

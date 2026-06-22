@@ -163,7 +163,7 @@ module.exports.payTicket = async function (req, res) {
     try {
       const payment = await stripe.paymentIntents.create({
         amount: parseFloat(req.body.amount),
-        currency: "usd",
+        currency: "cad",
         description: "Ticket paid for " + req.body.plate + " in " + req.body.zone_name + ", issued at " + moment(req.body.issued_at).format('MMM Do YY, hh:mm a'),
         automatic_payment_methods: {
           enabled: true,
@@ -215,6 +215,7 @@ module.exports.getTicketsIssuedByAgent = async function (req, res) {
     query = { ...query, issued_at: { $gte: start_date, $lte: end_date } }
   }
   const TicketIssued = await Ticket_Issued.find(query).
+    populate('org', 'org_name ticket_format').
     populate('city').
     populate('zone').
     populate('parking').
@@ -255,4 +256,41 @@ module.exports.addPrintedTicket = async function (req, res) {
         })
       }
     })
+}
+
+module.exports.searchTicketByPlate = async function (req, res) {
+    let ticketsIssued = await Ticket_Issued.find({ plate: req.body.plate, org: req.body.org })
+    .populate({ path: 'org', select: 'org_name time_zone' })
+    .populate({ path: 'city', select: 'city_name' })
+    .populate({ path: 'zone', select: 'zone_name' })
+    .populate({ path: 'ticket', select: 'ticket_name' })
+    .select('-__v');
+    let allTickets = [];
+    await Promise.all(ticketsIssued.map((async x => {
+      var date_now = moment();
+      var issued_at = moment(x.issued_at);
+      var min_difference = date_now.diff(issued_at, 'days') * 60 * 24;
+      let ticketAging = await Ticket_Aging.find({ ticket: x.ticket._id }).select('-__v');
+      let ticketAmount = {};
+      ticketAging.map(x => {
+        if (x.applied_to !== null) {
+          if (min_difference >= x.applied_from && min_difference <= x.applied_to && Object.keys(ticketAmount).length == 0) {
+            ticketAmount = x;
+          }
+        } else {
+          if (x.applied_from <= min_difference && x.applied_to == null && Object.keys(ticketAmount).length == 0) {
+            ticketAmount = x;
+          }
+        }
+      })
+      let selectedTicket = ticketAmount.toObject();
+      selectedTicket.day_passed = parseInt(min_difference / 60 / 24);
+      let obj = {
+        ticketIssued: x,
+        ticketAging: ticketAging,
+        ticketAmount: selectedTicket
+      }
+      allTickets.push(obj);
+    })))
+    res.send(allTickets)
 }

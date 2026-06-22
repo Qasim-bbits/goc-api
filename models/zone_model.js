@@ -105,6 +105,9 @@ const Zones = mongoose.model(
         owner_email: {
             type : String,
         },
+        redirect_to: {
+            type : String,
+        },
     })
 )
 exports.Zones = Zones;

@@ -35,6 +35,25 @@ module.exports.send_email = async function(subject,htmlFile,recipient,body){
       });
 }
 
+module.exports.send_raw_email = async function(subject,recipient,body){
+    var mailOptions = {
+        from: constants.email,
+        to: recipient,
+        subject: subject,
+        text: 'That was easy!',
+        html: body
+      };
+      
+      transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('email sent')
+          return 1;
+        }
+      });
+}
+
 exports.testEmail = async (req, res) => {
     try {
         const transporterTest = nodemailer.createTransport({

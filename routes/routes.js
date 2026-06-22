@@ -29,6 +29,7 @@ var email_template_ctrl = require('../controllers/email_template_ctrl');
 var stripe_ctrl = require('../controllers/stripe_ctrl');
 var virtual_meter_ad_ctrl = require('../controllers/virtual_meter_ad_ctrl');
 var notes_ctrl = require('../controllers/notes_ctrl');
+var black_listed_plate_ctrl = require('../controllers/black_listed_plate_ctrl');
 
 const { authorization } = require('../helpers/auth_helper');
 const { upload, handleFormData, compaign_upload } = require('../helpers/common_helper');
@@ -152,7 +153,7 @@ Routes.route('/getCurrentParkingsByPlate').post(parking_ctrl.getCurrentParkingsB
 Routes.route('/editParking').post(parking_ctrl.editParking);
 Routes.route('/delAllParkings').post(parking_ctrl.delAllParkings);
 Routes.route('/getParkingStatus').post(parking_ctrl.getParkingStatus);
-Routes.route('/renewTenantParking').post(parking_ctrl.renewTenantParking);
+Routes.route('/renewTenantParking').get(parking_ctrl.renewTenantParking);
 Routes.route('/buyVisitorPass').post(parking_ctrl.buyVisitorPass);
 Routes.route('/getParkingsByCity').post(parking_ctrl.getParkingsByCity);
 Routes.route('/parking_plates').post(parking_ctrl.parkingPlates);
@@ -217,6 +218,7 @@ Routes.route('/getTicketsIssuedByAgent').post(ticket_issue_ctrl.getTicketsIssued
 Routes.route('/IssuedTicket/:id').get(ticket_issue_ctrl.getTicketIssuedDetail);
 Routes.route('/delIssuedTicket/:id').delete(ticket_issue_ctrl.delTicketIssued);
 Routes.route('/addPrintedTicket').post(ticket_issue_ctrl.addPrintedTicket);
+Routes.route('/searchTicketByPlate').post(ticket_issue_ctrl.searchTicketByPlate);
 
 //routes for ExternalParkingConfig
 Routes.route('/getExternalParkingConfig').post(external_parking_config_ctrl.getExternalParkingConfig);
@@ -291,7 +293,15 @@ Routes.route('/delNote').post(notes_ctrl.delNote);
 Routes.route('/getNotes').post(notes_ctrl.getNotes);
 Routes.route('/getNotesByOrg').post(notes_ctrl.getNotesByOrg);
 Routes.route('/getNotesByType').post(notes_ctrl.getNotesByType);
+Routes.route('/checkParkApp').get(notes_ctrl.checkParkAPP);
+
+//routes for black_listed_plate
+Routes.route('/getBlackListedPlates').post(black_listed_plate_ctrl.getBlackListedPlates);
+Routes.route('/addBlackListedPlate').post(black_listed_plate_ctrl.addBlackListedPlate);
+Routes.route('/delBlackListedPlate').post(black_listed_plate_ctrl.delBlackListedPlate);
+Routes.route('/editBlackListedPlate').post(black_listed_plate_ctrl.editBlackListedPlate);
 
 Routes.route('/test-external-parking').post(parking_ctrl.testExternalParking);
+Routes.route('/live-api').get(parking_ctrl.liveAPI);
 
 module.exports = Routes;

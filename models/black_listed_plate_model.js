@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
-const PlateParkingLimits = mongoose.model(
-    'PlateParkingLimits',
+const BlackListedPlates = mongoose.model(
+    'BlackListedPlates',
     new mongoose.Schema({
         org : {
             type: mongoose.Schema.Types.ObjectId,
@@ -20,14 +20,14 @@ const PlateParkingLimits = mongoose.model(
             required : false,
             minlength : 0
         },
-        no_of_parking_per_plate : {
-            type : Number,
-            default: 0
+        blacklist_scope : {
+            type : String,
+            required : false,
         },
-        no_of_minutes_per_plate : {
-            type : Number,
-            default: 0
-        },
+        message : {
+            type : String,
+            required : false,
+        }
     })
 )
-exports.PlateParkingLimits = PlateParkingLimits;
+exports.BlackListedPlates = BlackListedPlates;

@@ -114,6 +114,28 @@ const Organizations = mongoose.model(
             type : Boolean,
             default: false
         },
+        parking_limit_type: {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        enable_parking_limit : {
+            type : Boolean,
+            default : false
+        },
+        no_of_parking_per_plate: {
+            type : Number,
+        },
+        start_parking_limit_date : {
+            type : Date,
+            required : false,
+            minlength : 0
+        },
+        end_parking_limit_date : {
+            type : Date,
+            required : false,
+            minlength : 0
+        },
     })
 )
 exports.Organizations = Organizations;
