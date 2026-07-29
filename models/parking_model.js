@@ -118,6 +118,23 @@ const Parkings = mongoose.model(
             required: false,
             minlength: 0
         },
+        external_request: {
+            type: String,
+            required: false,
+            minlength: 0
+        },
+        is_externalized: {
+            type: Boolean,
+            default: false
+        },
+        externalize_status: {
+            type: String,
+            enum: ["pending", "processing", "success", "failed"],
+            default: "pending"
+        },
+        retry_count: { type: Number, default: 0 },
+        externalize_success_at: { type: Date },
+        externalize_failed_at: { type: Date },
     })
 )
 exports.Parkings = Parkings;

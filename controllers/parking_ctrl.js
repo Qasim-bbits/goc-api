@@ -23,6 +23,7 @@ const { EmailTemplates } = require('../models/email_template_model');
 const { stringFormat } = require('../helpers/common_helper');
 moment.tz.setDefault("America/New_York");
 const CronJob = require('cron').CronJob;
+const agenda = require("../jobs/agenda");
 
 const job = new CronJob('0 0 * * *', function(){
   // renewParking();
@@ -634,7 +635,7 @@ module.exports.getParkingStatus = async function (req, res){
   res.send(response);
 }
 
-const externalParking = async (parking,parkings,res) =>{
+const externalParking = async (parking, parkings, res) => {
   const zone = await Zones.findById(parking.zone).select('-__v').populate('org').lean();
   if(zone.owner_email){
     const rate = await Rates.findById(parking.rate).select('-__v').lean();
@@ -669,77 +670,30 @@ const externalParking = async (parking,parkings,res) =>{
       await email_helper.send_email('Parking Purchased','./views/parking_purchased.ejs',zone.owner_email,emailBody);
     }
   }
-  const externalParkingConfig = await ExternalParkingConfig.findOne({zone: parking.zone}).select('-__v');
-  if(externalParkingConfig !== null){
-    var from = moment(parking.from)
-    var to = moment(parking.to)
-    var duration = moment.duration(to.diff(from));
-    var minutes = duration.asMinutes();
-    var parseString = require('xml2js').parseString;
-    let ipark_in= {
-      "ins_id": externalParkingConfig.blinkay_ins_id,
-      "grp_id": externalParkingConfig.blinkay_group_id,
-      "tar_id": externalParkingConfig.blinkay_tariff_id,
-      "lic_pla": parking.plate,
-      "pur_date": moment(from).format('HHmmssDDMMYYYY'),
-      "ini_date": moment(from).format('HHmmssDDMMYYYY'),
-      "end_date": moment(to).format('HHmmssDDMMYYYY'),
-      "amou_payed": parseFloat(parking.amount),
-      "time_payed": minutes,
-      "oper_id": "CWP_APP",
-      "ext_acc": "VPP",
-      "term_id": "",
-      "ver": "1.0",
-      "prov": "CWP_APP",
-      "ah": ""
-    }
-    ipark_in.ah = calculateHash.ah(ipark_in)
-    const body = "jsonIn="+JSON.stringify({ipark_in: ipark_in});
-    let header = {
-        'Authorization': 'Basic '+Buffer.from('integraTariffs:vuf`spnZlX').toString('base64'),
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      } 
-    const axios = require("axios");
-    axios.post('https://ws-iparksuite.iparkme.com/TariffComputer.WS/TariffComputer.asmx/InsertExternalParkingOperationInstallationTimeJSON', 
-        body,
-        {headers: header})
-      .then(function (response) {
-        let jsonResult;
-        parseString(response.data, function (err, res){
-            jsonResult = JSON.parse(res.string._)                    
-        });
-        if(jsonResult.ipark_out.r == 1){
-          Parkings.findByIdAndUpdate(parkings._id, { operation_id: jsonResult.ipark_out.oper_id }, { new: true })
-          .then(response => {
-              if (!response) {
-                  return res.status(404).json({
-                      msg: "Data not found with id " + req.body.id
-                  });
-              }
-              res.send(parkings);
-          }).catch(err => {
-              if (err.kind === 'ObjectId') {
-                  return res.status(404).json({
-                      msg: "Data not found with id " + req.body.id
-                  });
-              }
-              return res.status(500).json({
-                  msg: "Error updating Data with id " + req.body.id
-              });
-          });
-        }else{
-          res.json({
-            message: 'System error. Contact Support',
-            status: 'error',
-          });
-        }
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  }else{
+  const externalParkingConfig = await ExternalParkingConfig.findOne({ zone: parking.zone }).select("-__v");
+  console.log(externalParkingConfig)
+
+  if (res)
+    // respond immediately to frontend
     res.send(parkings);
+
+  if (!externalParkingConfig) {
+    await Parkings.findByIdAndUpdate(parkings._id, {
+      external_request: "external_not_configured",
+      externalize_status: "failed"
+    });
+    return;
   }
+
+  await Parkings.findByIdAndUpdate(parkings._id, {
+    externalize_status: "pending",
+    retry_count: 0
+  });
+
+  await agenda.now("retry-external-parking", {
+    parkingId: parkings._id,
+    attempt: 1
+  });
 }
 
 module.exports.renewTenantParking = async function (req, res){
@@ -1285,6 +1239,91 @@ module.exports.park_vehicle = async function (req, res) {
       newParking.parkings_left = parkingLimit - parkings.length - 1;
     }
     externalParking(req.body, newParking, res);
+  }
+}
+
+module.exports.externalizeParking = async function (req, res) {
+  const parking = await Parkings.findById(req.body.id).select('-__v');
+  const externalParkingConfig = await ExternalParkingConfig.findOne({ zone: parking.zone }).select('-__v');
+  if (externalParkingConfig !== null) {
+    var parseString = require('xml2js').parseString;
+    const axios = require("axios");
+    const header = {
+      'Authorization': 'Basic ' + Buffer.from('integraTariffs:vuf`spnZlX').toString('base64'),
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    };
+    const insert_url = 'https://ws-iparksuite.iparkme.com/TariffComputer.WS/TariffComputer.asmx/InsertExternalParkingOperationInstallationTimeJSON'
+    var from = moment(parking.from)
+    var to = moment(parking.to)
+    var duration = moment.duration(to.diff(from));
+    var minutes = duration.asMinutes();
+    let insert_ipark_in = {
+      "ins_id": externalParkingConfig.blinkay_ins_id,
+      "grp_id": externalParkingConfig.blinkay_group_id,
+      "tar_id": externalParkingConfig.blinkay_tariff_id,
+      "lic_pla": parking.plate,
+      "pur_date": moment(from).format('HHmmssDDMMYYYY'),
+      "ini_date": moment(from).format('HHmmssDDMMYYYY'),
+      "end_date": moment(to).format('HHmmssDDMMYYYY'),
+      "amou_payed": parseFloat(parking.amount),
+      "time_payed": minutes,
+      "oper_id": "CWP_APP",
+      "ext_acc": "VPP",
+      "term_id": "",
+      "ver": "1.0",
+      "prov": "CWP_APP",
+      "ah": ""
+    }
+    insert_ipark_in.ah = calculateHash.ah(insert_ipark_in)
+    const insert_body = "jsonIn=" + JSON.stringify({ ipark_in: insert_ipark_in });
+    console.log(insert_ipark_in)
+    axios.post(insert_url,
+      insert_body,
+      { headers: header })
+      .then(function (response) {
+        let jsonResult;
+        parseString(response.data, function (err, res) {
+          jsonResult = JSON.parse(res.string._)
+        });
+        console.log(jsonResult.ipark_out)
+        let externalReq = JSON.stringify({ payload: insert_body, response: jsonResult.ipark_out });
+        if (jsonResult.ipark_out.r == 1) {
+          Parkings.findByIdAndUpdate(parking._id, { operation_id: jsonResult.ipark_out.oper_id, is_externalized: true, externalize_status: 'success', external_request: externalReq }, { new: true })
+            .then(response => {
+              if (!response) {
+                return res.status(404).json({
+                  msg: "Data not found with id " + req.body.id
+                });
+              }
+              res.send(response)
+            })
+        } else {
+          Parkings.findByIdAndUpdate(parking._id, { external_request: externalReq }, { new: true })
+            .then(response => {
+              if (!response) {
+                return res.status(404).json({
+                  msg: "Data not found with id " + req.body.id
+                });
+              }
+              res.json({
+                data: response,
+                message: 'binkay_throw_error',
+                status: 'error',
+              });
+            })
+        }
+      })
+      .catch(function (error) {
+        res.json({
+          message: 'axios_throw_error',
+          status: 'error',
+        });
+      });
+  } else {
+    res.json({
+      message: 'zone_not_configured',
+      status: 'error',
+    });
   }
 }
 

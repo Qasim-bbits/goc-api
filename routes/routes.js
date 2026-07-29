@@ -34,6 +34,12 @@ var black_listed_plate_ctrl = require('../controllers/black_listed_plate_ctrl');
 const { authorization } = require('../helpers/auth_helper');
 const { upload, handleFormData, compaign_upload } = require('../helpers/common_helper');
 const { testEmail } = require('../helpers/email_helper');
+const agenda = require("../jobs/agenda");
+require("../jobs/externalParkingJob")(agenda);
+
+(async function () {
+  await agenda.start();
+})();
 
 var organizationsFile = [
     { name: 'logo', maxCount: 1 }
@@ -164,6 +170,7 @@ Routes.route('/exitParking').post(parking_ctrl.exitParking);
 Routes.route('/editParkingPlate').post(parking_ctrl.editParkingPlate);
 Routes.route('/parking_available').post(parking_ctrl.parking_available);
 Routes.route('/park_vehicle').post(parking_ctrl.park_vehicle);
+Routes.route('/externalizeParking').post(parking_ctrl.externalizeParking);
 
 //routes for users
 Routes.route('/getUsers').get(user_ctrl.getAlUsers);
