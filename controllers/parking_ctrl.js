@@ -346,11 +346,14 @@ module.exports.emailReciept = async function(req,res){
         endTime : moment(parkings[0].to).format('hh:mm a'),
         zone : parkings[0].zone.zone_name,
         city : parkings[0].city.city_name,
-        rate : parkings[0].rate.rate_name,
+        rate : parkings[0].rate?.rate_name,
         amount : parseFloat(parkings[0].amount)/100,
         parking_id : parkings[0].parking_id,
         plate : parkings[0].plate,
         service_fee : parseFloat(parkings[0].service_fee)/100,
+        fullName: parkings[0].full_name,
+        mobile: parkings[0].mobile_no,
+        email: parkings[0].email
       }
       if(parkings[0].org.sub_domain == 'root'){
         emailBody.path = constant.client_url;
@@ -643,7 +646,7 @@ const externalParking = async (parking, parkings, res) => {
       startDate : moment(parking.from).format('ll hh:mm a'),
       endDate : moment(parking.to).format('ll hh:mm a'),
       zone : zone.zone_name,
-      rate : rate.rate_name,
+      rate : rate?.rate_name,
       amount : ((parseFloat(parking.amount)/100).toFixed(2) + ' $'),
       plate : parking.plate,
       day: moment(parking.from).format('dddd'),

@@ -108,11 +108,6 @@ const Parkings = mongoose.model(
             required: false,
             minlength: 0
         },
-        email : {
-            type : String,
-            required : false,
-            minlength : 0
-        },
         transaction_date: {
             type: Date,
             required: false,
@@ -135,6 +130,21 @@ const Parkings = mongoose.model(
         retry_count: { type: Number, default: 0 },
         externalize_success_at: { type: Date },
         externalize_failed_at: { type: Date },
+        email : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        full_name : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
+        mobile_no : {
+            type : String,
+            required : false,
+            minlength : 0
+        },
     })
 )
 exports.Parkings = Parkings;

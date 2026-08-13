@@ -108,6 +108,10 @@ const Zones = mongoose.model(
         redirect_to: {
             type : String,
         },
+        parking_registration_ui : {
+            type : Boolean,
+            default : false
+        },
     })
 )
 exports.Zones = Zones;
