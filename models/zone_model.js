@@ -112,6 +112,9 @@ const Zones = mongoose.model(
             type : Boolean,
             default : false
         },
+        night_rate_end_at:{
+            type : String,
+        }
     })
 )
 exports.Zones = Zones;

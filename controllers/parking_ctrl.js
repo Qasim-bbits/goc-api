@@ -118,9 +118,9 @@ module.exports.buyParking = async function(req,res){
     if(kickOutZone?.can_user_kick_out == true){
       let parkings = await Parkings.find({
         $and: [
-          {from: {$lte: moment().toDate()}},
-          {to: {$gte: moment().toDate()}},
-          {zone: kickOutZone._id}
+          {from: {$lte: moment()}},
+          {to: {$gte: moment()}},
+	        {zone: kickOutZone._id}
         ]
       }).select('-__v');
       if(parkings.length > 0){
@@ -1331,20 +1331,17 @@ module.exports.externalizeParking = async function (req, res) {
 }
 
 module.exports.liveAPI = async function (req, res) {
-  let parkings = await Parkings.find({
-    org: '6903eb7130af2de717910ce8',
-    $expr: {
-      $lt: ["$to", "$from"]
-    },
-    amount: { $gt: 0 },
-    from: { $gte: new Date('2026-02-10T23:14:00.000Z') }
+  let zones = await Zones.find({
+    org: '6a7f4a6959851bb2041e7e6b'
   })
-  const ops = parkings.map(item => ({
-      updateOne: {
-        filter: { _id: item._id },
-        update: { $set: {to: moment(item.from).add(1,'days').format()} },
-      }
-    }));
-    // await Parkings.bulkWrite(ops);
-  res.send(parkings);
+  const configs = zones.map(zone => ({
+    org: "6a7f4a6959851bb2041e7e6b",
+    zone: zone._id,
+    blinkay_ins_id: 40090,
+    blinkay_group_id: 49009,
+    blinkay_tariff_id: 49011,
+  }));
+  console.log(zones.length)
+  // ExternalParkingConfig.insertMany(configs);
+  res.send(configs)
 }
